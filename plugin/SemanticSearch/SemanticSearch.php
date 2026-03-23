@@ -23,7 +23,7 @@ class SemanticSearchPlugin extends MantisPlugin {
 			'qdrant_collection' => 'mantis_resolved_issues',
 			'openai_embedding_model' => 'text-embedding-3-large',
 			'top_k' => 10,
-			'min_score' => 0.3,
+			'min_score' => 0.0,
 			'include_notes' => ON,
 			'include_attachments' => OFF,
 			'index_hierarchy_mode' => 'strict',
@@ -337,6 +337,9 @@ class SemanticSearchPlugin extends MantisPlugin {
 			echo '</div>';
 
 			echo '<div class="semsearch-actions">';
+			echo '<span style="margin-right:8px;font-size:12px;">Cantidad: <input type="number" min="1" max="50" name="similar_limit" value="10" style="width:70px;" /></span>';
+			echo '<span style="margin-right:8px;font-size:12px;">Score mín: <input type="number" step="0.01" min="0" max="1" name="similar_min_score" value="0.3" style="width:80px;" /></span>';
+			echo '<button type="submit" class="btn btn-xs btn-info" name="mode" value="similar_now">Obtener similares</button>';
 			echo '<button type="submit" class="btn btn-xs btn-default" name="mode" value="save_policy">Guardar política</button>';
 			echo '<button type="submit" class="btn btn-xs btn-primary" name="mode" value="index_now">Guardar e indexar ahora</button>';
 			echo '</div>';
