@@ -122,26 +122,17 @@ try {
 			}
 		}
 
-		if( $t_count === 0 ) {
-			$t_lines[] = 'No hay incidentes similares a la fecha con esos filtros.';
-			if( $t_mode === 'solution_now' ) {
-				$t_lines[] = '';
+		if( $t_mode === 'solution_now' ) {
+			if( $t_count === 0 ) {
 				$t_lines[] = 'No se encontró contexto semántico suficiente para resolver con propiedad este incidente.';
 				$t_fallback_prompt = "No tengo contexto semántico de incidentes similares para este caso. Problema actual:\n" . $t_context . "\n\nDame una posible solución inicial, aclarando supuestos y riesgos.";
 				$t_api_key = (string)$t_plugin->get_setting( 'openai_api_key', '', 'OPENAI_API_KEY' );
 				$t_solution = semsearch_call_responses_api( $t_api_key, $t_fallback_prompt );
+				$t_lines[] = '';
 				$t_lines[] = 'Posible solución sugerida por IA (sin contexto histórico):';
 				$t_lines[] = $t_solution;
-			}
-			bugnote_add( $t_bug_id, implode( "\n", $t_lines ) );
-		} else {
-			$t_lines[] = 'Total de incidentes similares encontrados: ' . $t_count . '.';
-			$t_lines[] = 'Incidentes similares:';
-			foreach( $t_similar_lines as $t_l ) {
-				$t_lines[] = $t_l;
-			}
-
-			if( $t_mode === 'solution_now' ) {
+			} else {
+				$t_lines[] = 'Se encontraron ' . $t_count . ' incidentes similares y se usaron como contexto interno para generar la solución.';
 				$t_prompt = "Problema actual:\n" . $t_context . "\n\nIncidentes similares:\n" . implode( "\n", $t_similar_lines ) . "\n\nDame una solución concreta para este problema basada en la información anterior.";
 				$t_api_key = (string)$t_plugin->get_setting( 'openai_api_key', '', 'OPENAI_API_KEY' );
 				$t_solution = semsearch_call_responses_api( $t_api_key, $t_prompt );
@@ -149,7 +140,17 @@ try {
 				$t_lines[] = 'Posible solución sugerida por IA:';
 				$t_lines[] = $t_solution;
 			}
-
+			bugnote_add( $t_bug_id, implode( "\n", $t_lines ) );
+		} else {
+			if( $t_count === 0 ) {
+				$t_lines[] = 'No hay incidentes similares a la fecha con esos filtros.';
+			} else {
+				$t_lines[] = 'Total de incidentes similares encontrados: ' . $t_count . '.';
+				$t_lines[] = 'Incidentes similares:';
+				foreach( $t_similar_lines as $t_l ) {
+					$t_lines[] = $t_l;
+				}
+			}
 			bugnote_add( $t_bug_id, implode( "\n", $t_lines ) );
 		}
 	}
