@@ -274,7 +274,8 @@ class SemanticV2Engine {
 			$t_note_id = (int)$this->rowv( $t_row, 'NoteId', 0 );
 			$t_file_id = (int)$this->rowv( $t_row, 'FileId', 0 );
 			$t_exists = $this->inventory_repo->file_exists( $t_issue_id, $t_file_id );
-			if( !$t_exists ) {
+			$t_physical_exists = $t_exists ? $this->inventory_repo->file_physical_exists( $t_issue_id, $t_file_id ) : false;
+			if( !$t_exists || !$t_physical_exists ) {
 				$t_indexed = (int)$this->rowv( $t_row, 'Indexed', 0 ) === 1;
 				$this->policy_repo->save_file_state( $t_issue_id, $t_note_id, $t_file_id, array(
 					'Hash' => (string)$this->rowv( $t_row, 'Hash', '' ), 'Empty' => (int)$this->rowv( $t_row, 'Empty', 0 ) === 1, 'Indexed' => $t_indexed,
@@ -414,6 +415,8 @@ class SemanticV2Engine {
 			'indexable' => (int)$this->rowv( $r, 'Indexable', 0 ) === 1,
 			'effective_indexable' => (int)$this->rowv( $r, 'Indexable', 0 ) === 1,
 			'empty' => (int)$this->rowv( $r, 'Empty', 0 ) === 1,
+			'deleted' => (int)$this->rowv( $r, 'Deleted', 0 ) === 1,
+			'deleted_at' => (int)$this->rowv( $r, 'DeletedAt', 0 ),
 			'indexed' => (int)$this->rowv( $r, 'Indexed', 0 ) === 1,
 			'status' => $t_action,
 			'target_status' => $t_action,
@@ -438,6 +441,8 @@ class SemanticV2Engine {
 			'indexable' => (int)$this->rowv( $r, 'Indexable', 0 ) === 1,
 			'effective_indexable' => (int)$this->rowv( $r, 'Indexable', 0 ) === 1,
 			'empty' => (int)$this->rowv( $r, 'Empty', 0 ) === 1,
+			'deleted' => (int)$this->rowv( $r, 'Deleted', 0 ) === 1,
+			'deleted_at' => (int)$this->rowv( $r, 'DeletedAt', 0 ),
 			'indexed' => (int)$this->rowv( $r, 'Indexed', 0 ) === 1,
 			'blocked_by_core' => false,
 			'status' => $t_action,
@@ -464,6 +469,8 @@ class SemanticV2Engine {
 			'indexable' => (int)$this->rowv( $r, 'Indexable', 0 ) === 1,
 			'effective_indexable' => (int)$this->rowv( $r, 'Indexable', 0 ) === 1,
 			'empty' => (int)$this->rowv( $r, 'Empty', 0 ) === 1,
+			'deleted' => (int)$this->rowv( $r, 'Deleted', 0 ) === 1,
+			'deleted_at' => (int)$this->rowv( $r, 'DeletedAt', 0 ),
 			'indexed' => (int)$this->rowv( $r, 'Indexed', 0 ) === 1,
 			'blocked_by_note' => false,
 			'blocked_by_core' => false,

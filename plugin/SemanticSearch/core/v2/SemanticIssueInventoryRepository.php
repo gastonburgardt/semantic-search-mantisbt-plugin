@@ -80,4 +80,25 @@ class SemanticIssueInventoryRepository {
 		$t_res = db_query( "SELECT id FROM $t_file_table WHERE id=" . db_param() . ' AND bug_id=' . db_param(), array( (int)$p_file_id, (int)$p_issue_id ) );
 		return db_num_rows( $t_res ) > 0;
 	}
+
+	public function file_physical_exists( $p_issue_id, $p_file_id ) {
+		$t_file_table = db_get_table( 'bug_file' );
+		$t_res = db_query( "SELECT diskfile, folder FROM $t_file_table WHERE id=" . db_param() . ' AND bug_id=' . db_param(), array( (int)$p_file_id, (int)$p_issue_id ) );
+		if( db_num_rows( $t_res ) <= 0 ) {
+			return false;
+		}
+		$t_row = db_fetch_array( $t_res );
+		$t_diskfile = isset( $t_row['diskfile'] ) ? trim( (string)$t_row['diskfile'] ) : '';
+		if( $t_diskfile === '' ) {
+			return true;
+		}
+		if( $t_diskfile[0] === '/' ) {
+			return @file_exists( $t_diskfile );
+		}
+		$t_folder = isset( $t_row['folder'] ) ? rtrim( (string)$t_row['folder'], '/' ) : '';
+		if( $t_folder !== '' ) {
+			return @file_exists( $t_folder . '/' . $t_diskfile );
+		}
+		return false;
+	}
 }

@@ -248,6 +248,7 @@ class SemanticSearchPlugin extends MantisPlugin {
 				if( $t_action === 'CreateIndex' ) { return 'Pendiente de alta en índice (indexable y aún no indexado).'; }
 				if( $t_action === 'UpdateIndex' ) { return 'Pendiente de actualización (cambió desde la última indexación).'; }
 				if( $t_action === 'DeleteIndex' ) { return 'Pendiente de borrado del índice (ya no debe estar indexado).'; }
+				if( !empty( $p_row['deleted'] ) ) { return 'Elemento marcado como eliminado en origen.'; }
 				if( !$t_indexable ) { return 'Sin acción: marcado como no indexable.'; }
 				if( $t_empty ) { return 'Sin acción: contenido vacío.'; }
 				if( $t_indexed ) { return 'Sin acción: indexado y sin cambios pendientes.'; }
@@ -276,10 +277,11 @@ class SemanticSearchPlugin extends MantisPlugin {
 			echo '<div class="item"><strong>Archivos:</strong> ' . count( $t_attachments ) . '</div>';
 			echo '</div>';
 
-			echo '<div class="semsearch-meta"><h5 style="margin-top:0;">1) Core del incidente (tabla semsearch_issue)</h5><div class="table-responsive"><table class="table table-condensed table-bordered"><thead><tr><th>Indexable</th><th>Vacío</th><th>Indexed</th><th>Acción</th><th>Nivel</th><th>Motivo</th><th>Creado</th><th>Actualizado</th><th>Indexado</th></tr></thead><tbody>';
+			echo '<div class="semsearch-meta"><h5 style="margin-top:0;">1) Core del incidente (tabla semsearch_issue)</h5><div class="table-responsive"><table class="table table-condensed table-bordered"><thead><tr><th>Indexable</th><th>Vacío</th><th>Eliminado</th><th>Indexed</th><th>Acción</th><th>Nivel</th><th>Motivo</th><th>Creado</th><th>Actualizado</th><th>Indexado</th></tr></thead><tbody>';
 			echo '<tr>';
 			echo '<td>' . ( !empty($t_core['indexable']) ? 'True' : 'False' ) . '</td>';
 			echo '<td>' . ( !empty($t_core['empty']) ? 'True' : 'False' ) . '</td>';
+			echo '<td>' . ( !empty($t_core['deleted']) ? 'True' : 'False' ) . '</td>';
 			echo '<td>' . ( !empty($t_core['indexed']) ? 'True' : 'False' ) . '</td>';
 			echo '<td>' . string_display_line( isset($t_core['target_status']) ? (string)$t_core['target_status'] : '-' ) . '</td>';
 			echo '<td>' . string_display_line( isset($t_core['review_level']) ? (string)$t_core['review_level'] : '-' ) . '</td>';
@@ -291,13 +293,14 @@ class SemanticSearchPlugin extends MantisPlugin {
 
 			echo '<div class="semsearch-flow"><strong>Relación:</strong> Core del incidente → Notas del core → Archivos de cada nota.</div>';
 			echo '<div class="semsearch-stack">';
-			echo '<div class="box"><h5 style="margin-top:0;">2) Notas del core</h5><div class="table-responsive"><table class="table table-condensed table-striped table-bordered"><thead><tr><th style="width:90px;">Indexable</th><th>Nota</th><th style="width:70px;">Vacío</th><th style="width:80px;">Indexed</th><th style="width:120px;">Acción</th><th style="width:130px;">Nivel revisión</th><th>Motivo</th><th style="width:120px;">Creado</th><th style="width:120px;">Actualizado</th><th style="width:120px;">Indexado</th></tr></thead><tbody>';
+			echo '<div class="box"><h5 style="margin-top:0;">2) Notas del core</h5><div class="table-responsive"><table class="table table-condensed table-striped table-bordered"><thead><tr><th style="width:90px;">Indexable</th><th>Nota</th><th style="width:70px;">Vacío</th><th style="width:80px;">Eliminado</th><th style="width:80px;">Indexed</th><th style="width:120px;">Acción</th><th style="width:130px;">Nivel revisión</th><th>Motivo</th><th style="width:120px;">Creado</th><th style="width:120px;">Actualizado</th><th style="width:120px;">Indexado</th></tr></thead><tbody>';
 			foreach( $t_notes as $t_note ) {
 				echo '<tr>';
 				echo '<td><input type="checkbox" name="note_ids[]" value="' . (int)$t_note['id'] . '" ' . ( !empty($t_note['indexable']) ? 'checked' : '' ) . ' /></td>';
 				$t_note_extra = !empty($t_note['blocked_by_core']) ? ' (bloq. por core)' : '';
 				echo '<td>#' . (int)$t_note['id'] . $t_note_extra . '</td>';
 				echo '<td>' . ( !empty($t_note['empty']) ? 'True' : 'False' ) . '</td>';
+				echo '<td>' . ( !empty($t_note['deleted']) ? 'True' : 'False' ) . '</td>';
 				echo '<td>' . ( !empty($t_note['indexed']) ? 'True' : 'False' ) . '</td>';
 				echo '<td>' . string_display_line( isset($t_note['target_status']) ? (string)$t_note['target_status'] : '-' ) . '</td>';
 				echo '<td>' . string_display_line( isset($t_note['review_level']) ? (string)$t_note['review_level'] : '-' ) . '</td>';
@@ -309,7 +312,7 @@ class SemanticSearchPlugin extends MantisPlugin {
 			}
 			echo '</tbody></table></div>';
 
-			echo '<div class="semsearch-subbox"><h5 style="margin-top:0;">3) Archivos de las notas</h5><div class="table-responsive"><table class="table table-condensed table-striped table-bordered"><thead><tr><th style="width:90px;">Indexable</th><th>Archivo</th><th style="width:70px;">Vacío</th><th style="width:80px;">Indexed</th><th style="width:120px;">Acción</th><th style="width:130px;">Nivel revisión</th><th>Motivo</th><th style="width:120px;">Creado</th><th style="width:120px;">Actualizado</th><th style="width:120px;">Indexado</th><th style="width:120px;">Nota</th></tr></thead><tbody>';
+			echo '<div class="semsearch-subbox"><h5 style="margin-top:0;">3) Archivos de las notas</h5><div class="table-responsive"><table class="table table-condensed table-striped table-bordered"><thead><tr><th style="width:90px;">Indexable</th><th>Archivo</th><th style="width:70px;">Vacío</th><th style="width:80px;">Eliminado</th><th style="width:80px;">Indexed</th><th style="width:120px;">Acción</th><th style="width:130px;">Nivel revisión</th><th>Motivo</th><th style="width:120px;">Creado</th><th style="width:120px;">Actualizado</th><th style="width:120px;">Indexado</th><th style="width:120px;">Nota</th></tr></thead><tbody>';
 			foreach( $t_attachments as $t_file ) {
 				$t_extra = '';
 				if( !empty($t_file['blocked_by_note']) && !empty($t_file['blocked_by_core']) ) { $t_extra .= ' (bloq. por nota y core)'; }
@@ -319,6 +322,7 @@ class SemanticSearchPlugin extends MantisPlugin {
 				echo '<td><input type="checkbox" name="attachment_ids[]" value="' . (int)$t_file['id'] . '" ' . ( !empty($t_file['indexable']) ? 'checked' : '' ) . ' /></td>';
 				echo '<td>' . string_display_line( (string)$t_file['name'] ) . $t_extra . '</td>';
 				echo '<td>' . ( !empty($t_file['empty']) ? 'True' : 'False' ) . '</td>';
+				echo '<td>' . ( !empty($t_file['deleted']) ? 'True' : 'False' ) . '</td>';
 				echo '<td>' . ( !empty($t_file['indexed']) ? 'True' : 'False' ) . '</td>';
 				echo '<td>' . string_display_line( isset($t_file['target_status']) ? (string)$t_file['target_status'] : '-' ) . '</td>';
 				echo '<td>' . string_display_line( isset($t_file['review_level']) ? (string)$t_file['review_level'] : '-' ) . '</td>';
