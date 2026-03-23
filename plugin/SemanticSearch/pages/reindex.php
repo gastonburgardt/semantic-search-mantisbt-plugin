@@ -1,0 +1,96 @@
+<?php
+
+access_ensure_global_level( plugin_config_get( 'admin_access_level' ) );
+
+layout_page_header( plugin_lang_get( 'menu_reindex' ) );
+layout_page_begin( 'manage_overview_page.php' );
+print_manage_menu( plugin_page( 'reindex' ) );
+?>
+<div class="col-md-12 col-xs-12">
+	<div class="space-10"></div>
+	<div class="form-container">
+		<div class="widget-box widget-color-blue2">
+			<div class="widget-header widget-header-small">
+				<h4 class="widget-title lighter"><?php echo plugin_lang_get( 'menu_reindex' ) ?></h4>
+			</div>
+			<div class="widget-body">
+				<div class="widget-main">
+					<p class="text-muted">Flujo recomendado: 1) Revisar política (Mantis + tablas de indexación), 2) Ejecutar indexación (solo tablas de indexación).</p>
+
+					<div class="row">
+						<div class="col-md-6">
+							<label><strong>Proyecto</strong></label>
+							<select id="project_id" class="form-control input-sm">
+								<option value="">Ninguno (seleccionar)</option>
+								<option value="0">Todos los proyectos</option>
+								<?php print_project_option_list( null, false ); ?>
+							</select>
+						</div>
+						<div class="col-md-6">
+							<label><strong>Issue ID (opcional)</strong></label>
+							<input id="issue_id" class="form-control no-spin" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="ej: 123" />
+						</div>
+					</div>
+					<div class="space-5"></div>
+					<div class="row"><div class="col-md-12"><small class="text-muted">Requerido: Proyecto o Issue ID.</small></div></div>
+
+					<div class="space-10"></div>
+					<div class="row">
+						<div class="col-md-6">
+							<label><strong>Tamaño de lote</strong></label>
+							<input id="batch_size" class="form-control" type="number" min="1" max="200" value="25" />
+						</div>
+						<div class="col-md-6">
+							<label><strong>Cantidad máx.</strong></label>
+							<input id="max_issues" class="form-control" type="number" min="0" placeholder="0 = sin límite" />
+						</div>
+					</div>
+
+					<div class="space-10"></div>
+					<div class="row">
+						<div class="col-md-6">
+							<label><strong>Creación desde</strong></label>
+							<input id="created_from" class="form-control" type="date" />
+						</div>
+						<div class="col-md-6">
+							<label><strong>Creación hasta</strong></label>
+							<input id="created_to" class="form-control" type="date" />
+						</div>
+					</div>
+
+					<div class="space-10"></div>
+					<div class="text-right">
+						<button id="process_state_btn" class="btn btn-info btn-white btn-round" type="button">Revisar política</button>
+						<button id="start_reindex_btn" class="btn btn-warning btn-white btn-round" type="button">Iniciar indexación</button>
+					</div>
+
+					<div class="space-10"></div>
+					<div class="row">
+						<div class="col-md-12">
+							<div class="well well-sm" style="margin-bottom:10px;">
+								<strong>Resumen v2</strong>
+								<span id="v2_action_summary" class="text-muted" style="margin-left:8px;">Acciones: N/A</span>
+								<span id="v2_review_summary" class="text-muted" style="margin-left:12px;">Niveles: N/A</span>
+							</div>
+						</div>
+					</div>
+					<div id="reindex_status" class="text-muted">Listo para iniciar.</div>
+					<div class="progress" style="height:20px;">
+						<div id="reindex_progress_bar" class="progress-bar progress-bar-warning" role="progressbar" style="width:0%">0%</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+.no-spin::-webkit-outer-spin-button,
+.no-spin::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.no-spin { -moz-appearance: textfield; }
+</style>
+
+<input type="hidden" id="reindex_action_base" value="<?php echo string_attribute( plugin_page( 'reindex_action' ) ); ?>" />
+<script src="<?php echo plugin_file( 'reindex.js' ) . '&v=20260322_2104'; ?>"></script>
+
+<?php layout_page_end();

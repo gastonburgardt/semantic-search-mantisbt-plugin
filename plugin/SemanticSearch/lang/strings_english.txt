@@ -1,0 +1,29 @@
+<?php
+
+$s_plugin_SemanticSearch_description = 'Semantic indexing and semantic search for resolved issues using OpenAI embeddings + Qdrant.';
+$s_plugin_SemanticSearch_menu_semantic_search = 'Semantic Search';
+$s_plugin_SemanticSearch_menu_reindex = 'Semantic Indexing';
+$s_plugin_SemanticSearch_search_button = 'Search';
+$s_plugin_SemanticSearch_issue_number = 'Issue #';
+$s_plugin_SemanticSearch_summary = 'Summary';
+$s_plugin_SemanticSearch_score = 'Similarity score';
+$s_plugin_SemanticSearch_link = 'Link';
+$s_plugin_SemanticSearch_open_issue = 'Open issue';
+$s_plugin_SemanticSearch_reindex_one = 'Reindex issue';
+$s_plugin_SemanticSearch_reindex_all = 'Reindex all resolved issues';
+$s_plugin_SemanticSearch_reindex_one_done = 'Issue #%d reindexed';
+$s_plugin_SemanticSearch_reindex_all_done = '%d issues reindexed';
+$s_plugin_SemanticSearch_config_title = 'Semantic Search Configuration';
+$s_plugin_SemanticSearch_action_update = 'Update configuration';
+$s_plugin_SemanticSearch_search_title = 'Semantic Search';
+$s_plugin_SemanticSearch_search_help = 'Describe your issue in natural language (symptom, context, expected behavior).';
+$s_plugin_SemanticSearch_search_query_label = 'Query';
+$s_plugin_SemanticSearch_search_limit_label = 'Max results';
+$s_plugin_SemanticSearch_search_min_score_label = 'Min score';
+$s_plugin_SemanticSearch_search_min_score_help = '0 = no threshold. Recommended: 0.2 to 0.4 for cleaner matches.';
+
+$s_plugin_SemanticSearch_index_status_title = 'Semantic index status';
+$s_plugin_SemanticSearch_index_status_indexed = 'Indexed';
+$s_plugin_SemanticSearch_index_status_not_indexed = 'Not indexed';
+$s_plugin_SemanticSearch_index_status_last_update = 'Last index update';
+$s_plugin_SemanticSearch_index_status_reindex_cta = 'Open reindex';

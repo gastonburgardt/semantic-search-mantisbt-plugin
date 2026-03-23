@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.12.6
+    container_name: qdrant-semsearch
+    restart: unless-stopped
+    ports:
+      - "${QDRANT_HOST_PORT:-6333}:6333"
+      - "${QDRANT_GRPC_HOST_PORT:-6334}:6334"
+    volumes:
+      - "${QDRANT_STORAGE_PATH:-./qdrant_data}:/qdrant/storage"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:6333/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s

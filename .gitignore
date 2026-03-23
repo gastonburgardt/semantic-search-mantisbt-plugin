@@ -1,0 +1,5 @@
+.env
+*.log
+vendor/
+qdrant_data/
+.DS_Store
