@@ -79,7 +79,7 @@ class SemanticV2Engine {
 					if( $t_eval['Action'] !== SemanticPolicyAction::NOTHING ) { $t_has_children = true; }
 					$this->policy_repo->save_file_state( $t_issue_id, $t_note_id, $t_fid, array(
 						'Hash' => $t_eval['StoreHash'],
-						'Empty' => false,
+						'Empty' => $t_file_empty,
 						'Indexed' => (int)$this->rowv( $t_row, 'Indexed', 0 ) === 1,
 						'IndexedAt' => $this->rowv( $t_row, 'IndexedAt', null ),
 						'Action' => $t_eval['Action'],

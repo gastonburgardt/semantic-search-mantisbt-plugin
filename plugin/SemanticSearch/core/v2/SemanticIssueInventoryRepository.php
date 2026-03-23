@@ -10,7 +10,28 @@ class SemanticIssueInventoryRepository {
 	}
 
 	public function load_attachments( $p_issue_id ) {
-		return file_get_visible_attachments( (int)$p_issue_id );
+		$t_raw = file_get_visible_attachments( (int)$p_issue_id );
+		$t_out = array();
+		foreach( $t_raw as $t_file ) {
+			$t_file['sem_file_exists'] = $this->attachment_physical_exists( $t_file );
+			$t_out[] = $t_file;
+		}
+		return $t_out;
+	}
+
+	private function attachment_physical_exists( array $p_file ) {
+		$t_diskfile = isset( $p_file['diskfile'] ) ? trim( (string)$p_file['diskfile'] ) : '';
+		if( $t_diskfile === '' ) {
+			return true;
+		}
+		if( $t_diskfile[0] === '/' ) {
+			return @file_exists( $t_diskfile );
+		}
+		$t_folder = isset( $p_file['folder'] ) ? rtrim( (string)$p_file['folder'], '/' ) : '';
+		if( $t_folder !== '' ) {
+			return @file_exists( $t_folder . '/' . $t_diskfile );
+		}
+		return false;
 	}
 
 	public function issue_source_hash( $p_bug ) {
