@@ -280,6 +280,8 @@ class SemanticV2Engine {
 					'Hash' => (string)$this->rowv( $t_row, 'Hash', '' ), 'Empty' => (int)$this->rowv( $t_row, 'Empty', 0 ) === 1, 'Indexed' => $t_indexed,
 					'IndexedAt' => $this->rowv( $t_row, 'IndexedAt', null ),
 					'Action' => $t_indexed ? SemanticPolicyAction::DELETE_INDEX : SemanticPolicyAction::NOTHING,
+					'Deleted' => true,
+					'DeletedAt' => time(),
 					'NivelDeRevision' => $t_indexed ? SemanticReviewLevel::ONLY_ME : SemanticReviewLevel::NONE,
 				) );
 			}
@@ -294,6 +296,8 @@ class SemanticV2Engine {
 					'Hash' => (string)$this->rowv( $t_row, 'Hash', '' ), 'Empty' => (int)$this->rowv( $t_row, 'Empty', 0 ) === 1, 'Indexed' => $t_indexed,
 					'IndexedAt' => $this->rowv( $t_row, 'IndexedAt', null ),
 					'Action' => $t_indexed ? SemanticPolicyAction::DELETE_INDEX : SemanticPolicyAction::NOTHING,
+					'Deleted' => true,
+					'DeletedAt' => time(),
 					'NivelDeRevision' => $t_indexed ? SemanticReviewLevel::ONLY_ME : SemanticReviewLevel::NONE,
 				) );
 			}
@@ -307,6 +311,8 @@ class SemanticV2Engine {
 					'Hash' => (string)$this->rowv( $t_row, 'Hash', '' ), 'Empty' => (int)$this->rowv( $t_row, 'Empty', 0 ) === 1, 'Indexed' => $t_indexed,
 					'IndexedAt' => $this->rowv( $t_row, 'IndexedAt', null ),
 					'Action' => $t_indexed ? SemanticPolicyAction::DELETE_INDEX : SemanticPolicyAction::NOTHING,
+					'Deleted' => true,
+					'DeletedAt' => time(),
 					'NivelDeRevision' => $t_indexed ? SemanticReviewLevel::ONLY_ME : SemanticReviewLevel::NONE,
 				) );
 			}

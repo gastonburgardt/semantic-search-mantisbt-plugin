@@ -19,6 +19,8 @@ class SemanticSearchV2Schema {
 			CreatedAt INT NOT NULL DEFAULT 0,
 			UpdatedAt INT NOT NULL DEFAULT 0,
 			IndexedAt INT NULL DEFAULT NULL,
+			Deleted TINYINT NOT NULL DEFAULT 0,
+			DeletedAt INT NULL DEFAULT NULL,
 			Indexable TINYINT NOT NULL DEFAULT 0,
 			Hash VARCHAR(64) NOT NULL DEFAULT '',
 			Empty TINYINT NOT NULL DEFAULT 0,
@@ -31,6 +33,8 @@ class SemanticSearchV2Schema {
 		$this->ensure_column( $t_table, 'CreatedAt', 'INT NOT NULL DEFAULT 0' );
 		$this->ensure_column( $t_table, 'UpdatedAt', 'INT NOT NULL DEFAULT 0' );
 		$this->ensure_column( $t_table, 'IndexedAt', 'INT NULL DEFAULT NULL' );
+		$this->ensure_column( $t_table, 'Deleted', 'TINYINT NOT NULL DEFAULT 0' );
+		$this->ensure_column( $t_table, 'DeletedAt', 'INT NULL DEFAULT NULL' );
 		$this->drop_column_if_exists( $t_table, 'Date' );
 	}
 
@@ -42,6 +46,8 @@ class SemanticSearchV2Schema {
 			CreatedAt INT NOT NULL DEFAULT 0,
 			UpdatedAt INT NOT NULL DEFAULT 0,
 			IndexedAt INT NULL DEFAULT NULL,
+			Deleted TINYINT NOT NULL DEFAULT 0,
+			DeletedAt INT NULL DEFAULT NULL,
 			Indexable TINYINT NOT NULL DEFAULT 0,
 			Hash VARCHAR(64) NOT NULL DEFAULT '',
 			Empty TINYINT NOT NULL DEFAULT 0,
@@ -54,6 +60,8 @@ class SemanticSearchV2Schema {
 		$this->ensure_column( $t_table, 'CreatedAt', 'INT NOT NULL DEFAULT 0' );
 		$this->ensure_column( $t_table, 'UpdatedAt', 'INT NOT NULL DEFAULT 0' );
 		$this->ensure_column( $t_table, 'IndexedAt', 'INT NULL DEFAULT NULL' );
+		$this->ensure_column( $t_table, 'Deleted', 'TINYINT NOT NULL DEFAULT 0' );
+		$this->ensure_column( $t_table, 'DeletedAt', 'INT NULL DEFAULT NULL' );
 		$this->drop_column_if_exists( $t_table, 'Date' );
 	}
 
@@ -66,6 +74,8 @@ class SemanticSearchV2Schema {
 			CreatedAt INT NOT NULL DEFAULT 0,
 			UpdatedAt INT NOT NULL DEFAULT 0,
 			IndexedAt INT NULL DEFAULT NULL,
+			Deleted TINYINT NOT NULL DEFAULT 0,
+			DeletedAt INT NULL DEFAULT NULL,
 			Indexable TINYINT NOT NULL DEFAULT 0,
 			Hash VARCHAR(64) NOT NULL DEFAULT '',
 			Empty TINYINT NOT NULL DEFAULT 0,
@@ -78,6 +88,8 @@ class SemanticSearchV2Schema {
 		$this->ensure_column( $t_table, 'CreatedAt', 'INT NOT NULL DEFAULT 0' );
 		$this->ensure_column( $t_table, 'UpdatedAt', 'INT NOT NULL DEFAULT 0' );
 		$this->ensure_column( $t_table, 'IndexedAt', 'INT NULL DEFAULT NULL' );
+		$this->ensure_column( $t_table, 'Deleted', 'TINYINT NOT NULL DEFAULT 0' );
+		$this->ensure_column( $t_table, 'DeletedAt', 'INT NULL DEFAULT NULL' );
 		$this->drop_column_if_exists( $t_table, 'Date' );
 	}
 

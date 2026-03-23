@@ -71,7 +71,7 @@ class SemanticPolicyRepository {
 			return;
 		}
 		db_query(
-			"INSERT INTO $t_table (FileId,NoteId,IssueId,CreatedAt,UpdatedAt,IndexedAt,Indexable,Hash,Empty,Indexed,Action,NivelDeRevision) VALUES (" . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ",NULL,0,'',0,0,'Nothing','NoRevisarNada')",
+			"INSERT INTO $t_table (FileId,NoteId,IssueId,CreatedAt,UpdatedAt,IndexedAt,Deleted,DeletedAt,Indexable,Hash,Empty,Indexed,Action,NivelDeRevision) VALUES (" . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ',' . db_param() . ",NULL,0,NULL,0,'',0,0,'Nothing','NoRevisarNada')",
 			array( (int)$p_file_id, (int)$p_note_id, (int)$p_issue_id, (int)$p_now, (int)$p_now )
 		);
 	}
@@ -123,9 +123,11 @@ class SemanticPolicyRepository {
 
 	public function save_file_state( $p_issue_id, $p_note_id, $p_file_id, array $p_values ) {
 		$t_now = time();
+		$t_deleted = !empty( $p_values['Deleted'] );
+		$t_deleted_at = $t_deleted ? ( array_key_exists( 'DeletedAt', $p_values ) ? $p_values['DeletedAt'] : $t_now ) : null;
 		db_query(
-			"UPDATE " . $this->t_file() . " SET Hash=" . db_param() . ', Empty=' . db_param() . ', Indexed=' . db_param() . ', Action=' . db_param() . ', NivelDeRevision=' . db_param() . ', UpdatedAt=' . db_param() . ', IndexedAt=' . db_param() . " WHERE IssueId=" . db_param() . ' AND FileId=' . db_param(),
-			array( (string)$p_values['Hash'], $this->bool_to_db( !empty( $p_values['Empty'] ) ), $this->bool_to_db( !empty( $p_values['Indexed'] ) ), (string)$p_values['Action'], (string)$p_values['NivelDeRevision'], $t_now, $this->indexed_at_param( $p_values, $t_now ), (int)$p_issue_id, (int)$p_file_id )
+			"UPDATE " . $this->t_file() . " SET Hash=" . db_param() . ', Empty=' . db_param() . ', Indexed=' . db_param() . ', Action=' . db_param() . ', NivelDeRevision=' . db_param() . ', Deleted=' . db_param() . ', DeletedAt=' . db_param() . ', UpdatedAt=' . db_param() . ', IndexedAt=' . db_param() . " WHERE IssueId=" . db_param() . ' AND FileId=' . db_param(),
+			array( (string)$p_values['Hash'], $this->bool_to_db( !empty( $p_values['Empty'] ) ), $this->bool_to_db( !empty( $p_values['Indexed'] ) ), (string)$p_values['Action'], (string)$p_values['NivelDeRevision'], $this->bool_to_db( $t_deleted ), $t_deleted_at, $t_now, $this->indexed_at_param( $p_values, $t_now ), (int)$p_issue_id, (int)$p_file_id )
 		);
 	}
 
