@@ -29,5 +29,13 @@ Implementación del plugin **SemanticSearch** para MantisBT.
 ## Guías
 - `docs/06-how-to-install-with-mantis.md` → instalación desde cero con Mantis + plugin + qdrant.
 
+## Cambios recientes (UI + seguridad)
+- Panel de issue con jerarquía visual Core → Notas → Archivos.
+- Etiquetas de estado en español en UI (`Indexado`, `Sí/No`, `CrearIndice/ActualizarIndice/EliminarIndice/SinAccion`).
+- En Core se muestra `Issue` con `#ID` en la grilla.
+- Protección CSRF agregada en:
+  - acciones del panel de issue (`attachment_index_action`)
+  - endpoints AJAX de reindex (`reindex_action`).
+
 ## Nota
 MantisBT no se incluye en este repositorio. Se instala por separado o se descarga con el script opcional.

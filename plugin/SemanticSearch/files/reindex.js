@@ -4,11 +4,13 @@
 	const statusEl = document.getElementById('reindex_status');
 	const bar = document.getElementById('reindex_progress_bar');
 	const baseHolder = document.getElementById('reindex_action_base');
-	if(!btn || !processBtn || !statusEl || !bar || !baseHolder) {
+	const tokenHolder = document.getElementById('reindex_form_token');
+	if(!btn || !processBtn || !statusEl || !bar || !baseHolder || !tokenHolder) {
 		return;
 	}
 
 	const base = baseHolder.value;
+	const formToken = tokenHolder.value;
 
 	function v(id){ return (document.getElementById(id)?.value || '').trim(); }
 	function q(params){ return new URLSearchParams(params).toString(); }
@@ -26,6 +28,7 @@
 	function buildFilters(projectId){
 		return {
 			ajax: 1,
+			form_security_token: formToken,
 			project_id: projectId,
 			issue_id: v('issue_id'),
 			created_from: v('created_from'),

@@ -116,7 +116,13 @@ Configurar:
 
 ---
 
-## 8) Solución rápida de problemas
+## 8) Seguridad y permisos (recomendado)
+- `search_access_level`: controla acceso a búsqueda semántica.
+- `admin_access_level`: controla acceso a indexación global/reindex.
+- El plugin usa protección CSRF en acciones del panel y en reindex AJAX.
+- Recomendación operativa: dejar `admin_access_level` en `ADMINISTRATOR`.
+
+## 9) Solución rápida de problemas
 
 - Error de tabla no existe (`mantis_plugin_semsearch_*`):
   - revisar `--plugin-prefix` usado en install script.

@@ -48,6 +48,7 @@ function semsearch_get_filters() {
 
 if( $t_ajax ) {
 	header( 'Content-Type: application/json; charset=utf-8' );
+	form_security_validate( 'plugin_SemanticSearch_reindex' );
 	$t_filters = semsearch_get_filters();
 	if( ( !isset( $t_filters['project_id'] ) || $t_filters['project_id'] === null ) && ( !isset( $t_filters['issue_id'] ) || (int)$t_filters['issue_id'] <= 0 ) ) {
 		echo json_encode( array( 'ok' => false, 'error' => 'Debe indicar Proyecto o Issue ID.' ) );

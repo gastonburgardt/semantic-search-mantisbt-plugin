@@ -1,5 +1,6 @@
 <?php
 
+form_security_validate( 'plugin_SemanticSearch_attachment_index_action' );
 access_ensure_project_level( plugin_config_get( 'search_access_level' ) );
 
 $t_bug_id = gpc_get_int( 'bug_id' );
@@ -156,4 +157,5 @@ try {
 	log_event( LOG_PLUGIN, '[SemanticSearch] attachment_index_action failed for issue #' . $t_bug_id . ': ' . $e->getMessage() );
 }
 
+form_security_purge( 'plugin_SemanticSearch_attachment_index_action' );
 print_header_redirect( string_get_bug_view_url( $t_bug_id ) );
