@@ -1,8 +1,7 @@
--- SemanticSearch (MantisBT) schema script
--- Author: Gaston Burgardt
--- Target DB: mantisbt (MariaDB/MySQL)
+-- SemanticSearch schema (template)
+-- Reemplazar __PLUGIN_PREFIX__ antes de ejecutar (ej: mantis_plugin_ o mantisplugin_)
 
-CREATE TABLE IF NOT EXISTS mantisplugin_semsearch_issue (
+CREATE TABLE IF NOT EXISTS __PLUGIN_PREFIX__semsearch_issue (
   IssueId INT NOT NULL,
   CreatedAt INT NOT NULL DEFAULT 0,
   UpdatedAt INT NOT NULL DEFAULT 0,
@@ -16,7 +15,7 @@ CREATE TABLE IF NOT EXISTS mantisplugin_semsearch_issue (
   PRIMARY KEY (IssueId)
 );
 
-CREATE TABLE IF NOT EXISTS mantisplugin_semsearch_issuenote (
+CREATE TABLE IF NOT EXISTS __PLUGIN_PREFIX__semsearch_issuenote (
   NoteId INT NOT NULL,
   IssueId INT NOT NULL,
   CreatedAt INT NOT NULL DEFAULT 0,
@@ -31,7 +30,7 @@ CREATE TABLE IF NOT EXISTS mantisplugin_semsearch_issuenote (
   PRIMARY KEY (NoteId, IssueId)
 );
 
-CREATE TABLE IF NOT EXISTS mantisplugin_semsearch_issuenotefile (
+CREATE TABLE IF NOT EXISTS __PLUGIN_PREFIX__semsearch_issuenotefile (
   FileId INT NOT NULL,
   NoteId INT NOT NULL DEFAULT 0,
   IssueId INT NOT NULL,
@@ -46,4 +45,3 @@ CREATE TABLE IF NOT EXISTS mantisplugin_semsearch_issuenotefile (
   NivelDeRevision VARCHAR(24) NOT NULL DEFAULT 'NoRevisarNada',
   PRIMARY KEY (FileId, NoteId, IssueId)
 );
-
