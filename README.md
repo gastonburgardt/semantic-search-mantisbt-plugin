@@ -1,6 +1,6 @@
 # semantic-search-mantisbt-plugin
 
-Proyecto limpio del plugin **SemanticSearch** para MantisBT.
+Implementación del plugin **SemanticSearch** para MantisBT.
 
 ## Estructura
 - `plugin/SemanticSearch/` → código del plugin

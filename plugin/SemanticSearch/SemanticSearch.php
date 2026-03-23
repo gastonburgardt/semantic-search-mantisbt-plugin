@@ -21,7 +21,7 @@ class SemanticSearchPlugin extends MantisPlugin {
 			'admin_access_level' => ADMINISTRATOR,
 			'qdrant_url' => 'http://qdrant:6333',
 			'qdrant_collection' => 'mantis_resolved_issues',
-			'openai_embedding_model' => 'text-embedding-3-small',
+			'openai_embedding_model' => 'text-embedding-3-large',
 			'top_k' => 10,
 			'min_score' => 0.0,
 			'include_notes' => ON,

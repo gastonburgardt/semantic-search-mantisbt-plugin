@@ -47,6 +47,3 @@ CREATE TABLE IF NOT EXISTS mantisplugin_semsearch_issuenotefile (
   PRIMARY KEY (FileId, NoteId, IssueId)
 );
 
--- Cleanup legacy artifacts if present
-DROP TABLE IF EXISTS mantisplugin_semsearch_attachment_index;
-DROP TABLE IF EXISTS mantisplugin_semsearch_item_policy;

@@ -13,7 +13,7 @@ class OpenAIEmbeddingClient {
 			throw new RuntimeException( 'OPENAI_API_KEY is not configured' );
 		}
 
-		$t_model = $this->plugin->get_setting( 'openai_embedding_model', 'text-embedding-3-small', 'OPENAI_EMBEDDING_MODEL' );
+		$t_model = $this->plugin->get_setting( 'openai_embedding_model', 'text-embedding-3-large', 'OPENAI_EMBEDDING_MODEL' );
 		$t_payload = json_encode( array(
 			'model' => $t_model,
 			'input' => $p_text,
