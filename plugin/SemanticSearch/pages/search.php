@@ -6,7 +6,7 @@ $t_query = trim( gpc_get_string( 'q', '' ) );
 $t_limit_raw = trim( gpc_get_string( 'limit', (string)plugin_config_get( 'top_k' ) ) );
 $t_min_score_default = plugin_config_get( 'min_score' );
 if( $t_min_score_default === null || $t_min_score_default === '' ) {
-	$t_min_score_default = '0.2';
+	$t_min_score_default = '0.3';
 }
 $t_min_score_raw = trim( gpc_get_string( 'min_score', (string)$t_min_score_default ) );
 $t_project_raw = gpc_get_string( 'project_id', '' );
