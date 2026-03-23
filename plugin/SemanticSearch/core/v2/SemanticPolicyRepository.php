@@ -65,8 +65,9 @@ class SemanticPolicyRepository {
 
 	private function ensure_file_row( $p_issue_id, $p_note_id, $p_file_id, $p_now ) {
 		$t_table = $this->t_file();
-		$t_exists = db_query( "SELECT FileId FROM $t_table WHERE FileId=" . db_param() . ' AND NoteId=' . db_param() . ' AND IssueId=' . db_param(), array( (int)$p_file_id, (int)$p_note_id, (int)$p_issue_id ) );
+		$t_exists = db_query( "SELECT FileId FROM $t_table WHERE FileId=" . db_param() . ' AND IssueId=' . db_param(), array( (int)$p_file_id, (int)$p_issue_id ) );
 		if( db_num_rows( $t_exists ) > 0 ) {
+			db_query( "UPDATE $t_table SET NoteId=" . db_param() . ', UpdatedAt=' . db_param() . " WHERE FileId=" . db_param() . ' AND IssueId=' . db_param(), array( (int)$p_note_id, (int)$p_now, (int)$p_file_id, (int)$p_issue_id ) );
 			return;
 		}
 		db_query(
@@ -123,8 +124,8 @@ class SemanticPolicyRepository {
 	public function save_file_state( $p_issue_id, $p_note_id, $p_file_id, array $p_values ) {
 		$t_now = time();
 		db_query(
-			"UPDATE " . $this->t_file() . " SET NoteId=" . db_param() . ', Hash=' . db_param() . ', Empty=' . db_param() . ', Indexed=' . db_param() . ', Action=' . db_param() . ', NivelDeRevision=' . db_param() . ', UpdatedAt=' . db_param() . ', IndexedAt=' . db_param() . " WHERE IssueId=" . db_param() . ' AND FileId=' . db_param(),
-			array( (int)$p_note_id, (string)$p_values['Hash'], $this->bool_to_db( !empty( $p_values['Empty'] ) ), $this->bool_to_db( !empty( $p_values['Indexed'] ) ), (string)$p_values['Action'], (string)$p_values['NivelDeRevision'], $t_now, $this->indexed_at_param( $p_values, $t_now ), (int)$p_issue_id, (int)$p_file_id )
+			"UPDATE " . $this->t_file() . " SET Hash=" . db_param() . ', Empty=' . db_param() . ', Indexed=' . db_param() . ', Action=' . db_param() . ', NivelDeRevision=' . db_param() . ', UpdatedAt=' . db_param() . ', IndexedAt=' . db_param() . " WHERE IssueId=" . db_param() . ' AND FileId=' . db_param(),
+			array( (string)$p_values['Hash'], $this->bool_to_db( !empty( $p_values['Empty'] ) ), $this->bool_to_db( !empty( $p_values['Indexed'] ) ), (string)$p_values['Action'], (string)$p_values['NivelDeRevision'], $t_now, $this->indexed_at_param( $p_values, $t_now ), (int)$p_issue_id, (int)$p_file_id )
 		);
 	}
 
