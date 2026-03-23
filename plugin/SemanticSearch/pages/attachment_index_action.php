@@ -99,13 +99,13 @@ try {
 		if( trim( $t_context ) === '' ) {
 			$t_context = trim( (string)$t_bug->summary . "\n" . (string)$t_bug->description );
 		}
-		$t_query = "¿Qué solución tiene este problema?\n\n" . $t_context;
+		$t_query = $t_mode === 'solution_now' ? ("¿Qué solución tiene este problema?\n\n" . $t_context) : $t_context;
 		$t_results = $t_service->search( $t_query, $t_similar_limit + 5, $t_similar_min_score, (int)$t_bug->project_id, null );
 
 		$t_lines = array();
 		$t_now = date( 'Y-m-d H:i:s' );
-		$t_lines[] = ( $t_mode === 'solution_now' ? 'Posible solución automática' : 'Similitudes automáticas' ) . ' (' . $t_now . ')';
-		$t_lines[] = 'Filtros: cantidad=' . $t_similar_limit . ', score mínimo=' . $t_similar_min_score . ', proyecto=' . (int)$t_bug->project_id . '.';
+		$t_lines[] = ( $t_mode === 'solution_now' ? 'Posible solución automática' : 'Incidentes similares' ) . ' (' . $t_now . ')';
+		$t_lines[] = 'Filtros usados: cantidad=' . $t_similar_limit . ', score mínimo=' . $t_similar_min_score . ', proyecto=' . (int)$t_bug->project_id . '.';
 
 		$t_count = 0;
 		$t_similar_lines = array();
@@ -123,6 +123,15 @@ try {
 
 		if( $t_count === 0 ) {
 			$t_lines[] = 'No hay incidentes similares a la fecha con esos filtros.';
+			if( $t_mode === 'solution_now' ) {
+				$t_lines[] = '';
+				$t_lines[] = 'No se encontró contexto semántico suficiente para resolver con propiedad este incidente.';
+				$t_fallback_prompt = "No tengo contexto semántico de incidentes similares para este caso. Problema actual:\n" . $t_context . "\n\nDame una posible solución inicial, aclarando supuestos y riesgos.";
+				$t_api_key = (string)$t_plugin->get_setting( 'openai_api_key', '', 'OPENAI_API_KEY' );
+				$t_solution = semsearch_call_responses_api( $t_api_key, $t_fallback_prompt );
+				$t_lines[] = 'Posible solución sugerida por IA (sin contexto histórico):';
+				$t_lines[] = $t_solution;
+			}
 			bugnote_add( $t_bug_id, implode( "\n", $t_lines ) );
 		} else {
 			$t_lines[] = 'Total de incidentes similares encontrados: ' . $t_count . '.';

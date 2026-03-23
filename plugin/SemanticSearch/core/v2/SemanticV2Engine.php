@@ -654,6 +654,16 @@ class SemanticV2Engine {
 	}
 
 	public function build_payload( $p_bug, array $p_attachment_ctx = array() ) {
-		return array( 'issue_id' => (int)$p_bug->id, 'issue_number' => bug_format_id( $p_bug->id ), 'summary' => (string)$p_bug->summary, 'updated_at' => date( DATE_ATOM, (int)$p_bug->last_updated ), 'is_currently_indexed_status' => true );
+		$t_project_id = isset( $p_bug->project_id ) ? (int)$p_bug->project_id : 0;
+		$t_project_name = $t_project_id > 0 ? project_get_name( $t_project_id ) : '';
+		return array(
+			'issue_id' => (int)$p_bug->id,
+			'issue_number' => bug_format_id( $p_bug->id ),
+			'summary' => (string)$p_bug->summary,
+			'project_id' => $t_project_id,
+			'project_name' => $t_project_name,
+			'updated_at' => date( DATE_ATOM, (int)$p_bug->last_updated ),
+			'is_currently_indexed_status' => true,
+		);
 	}
 }

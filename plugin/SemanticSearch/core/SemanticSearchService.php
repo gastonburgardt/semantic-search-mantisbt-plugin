@@ -42,8 +42,14 @@ class SemanticSearchService {
 				continue;
 			}
 			$t_project_name_row = isset( $t_payload['project_name'] ) ? (string)$t_payload['project_name'] : '';
-			if( $t_project_name_filter !== null && $t_project_name_row !== $t_project_name_filter ) {
-				continue;
+			$t_project_id_row = isset( $t_payload['project_id'] ) ? (int)$t_payload['project_id'] : 0;
+			if( $t_project_name_filter !== null ) {
+				if( $t_project_id > 0 && $t_project_id_row > 0 && $t_project_id_row !== $t_project_id ) {
+					continue;
+				}
+				if( $t_project_id_row <= 0 && $t_project_name_row !== '' && $t_project_name_row !== $t_project_name_filter ) {
+					continue;
+				}
 			}
 
 			$t_response[] = array(
