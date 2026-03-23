@@ -26,5 +26,8 @@ Implementación del plugin **SemanticSearch** para MantisBT.
 
 > `--plugin-prefix` soporta diferencias entre instalaciones (`mantis_plugin_` o `mantisplugin_`).
 
+## Guías
+- `docs/06-how-to-install-with-mantis.md` → instalación desde cero con Mantis + plugin + qdrant.
+
 ## Nota
 MantisBT no se incluye en este repositorio. Se instala por separado o se descarga con el script opcional.
