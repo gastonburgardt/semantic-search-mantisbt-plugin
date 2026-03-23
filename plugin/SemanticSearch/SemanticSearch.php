@@ -340,6 +340,7 @@ class SemanticSearchPlugin extends MantisPlugin {
 			echo '<span style="margin-right:8px;font-size:12px;">Cantidad: <input type="number" min="1" max="50" name="similar_limit" value="10" style="width:70px;" /></span>';
 			echo '<span style="margin-right:8px;font-size:12px;">Score mín: <input type="number" step="0.01" min="0" max="1" name="similar_min_score" value="0.3" style="width:80px;" /></span>';
 			echo '<button type="submit" class="btn btn-xs btn-info" name="mode" value="similar_now">Obtener similares</button>';
+			echo '<button type="submit" class="btn btn-xs btn-success" name="mode" value="solution_now">Obtener posible solución</button>';
 			echo '<button type="submit" class="btn btn-xs btn-default" name="mode" value="save_policy">Guardar política</button>';
 			echo '<button type="submit" class="btn btn-xs btn-primary" name="mode" value="index_now">Guardar e indexar ahora</button>';
 			echo '</div>';
