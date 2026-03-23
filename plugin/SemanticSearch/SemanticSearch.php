@@ -23,7 +23,7 @@ class SemanticSearchPlugin extends MantisPlugin {
 			'qdrant_collection' => 'mantis_resolved_issues',
 			'openai_embedding_model' => 'text-embedding-3-large',
 			'top_k' => 10,
-			'min_score' => 0.0,
+			'min_score' => 0.2,
 			'include_notes' => ON,
 			'include_attachments' => OFF,
 			'index_hierarchy_mode' => 'strict',
