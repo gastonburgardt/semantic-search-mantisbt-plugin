@@ -496,7 +496,7 @@ class SemanticV2Engine {
 		$t_text = $this->build_index_text( $t_bug, array(), $t_dash );
 		if( trim( $t_text ) !== '' ) {
 			$t_vector = $this->openai->embed( $t_text );
-			$this->qdrant->ensure_collection( count( $t_vector ) );
+			$this->qdrant->ensure_collection( count( $t_vector ), (int)$t_bug->project_id, project_get_name( (int)$t_bug->project_id ) );
 			$this->qdrant->upsert_issue( $t_issue_id, $t_vector, $this->build_payload( $t_bug, array() ) );
 		}
 
@@ -525,8 +525,14 @@ class SemanticV2Engine {
 		$this->policy_repo->save_file_state( $issue_id, (int)$this->rowv( $r, 'NoteId', 0 ), (int)$this->rowv( $r, 'FileId', 0 ), array( 'Hash'=>(string)$this->rowv( $r, 'Hash', '' ), 'Empty'=>(int)$this->rowv( $r, 'Empty', 0 )===1, 'Indexed'=>$indexed, 'IndexedAt'=>($indexed ? $now : null), 'Action'=>SemanticPolicyAction::NOTHING, 'NivelDeRevision'=>SemanticReviewLevel::NONE ) );
 	}
 
-	public function delete_issue_vector( $p_issue_id ) { $this->qdrant->delete_issue( (int)$p_issue_id ); }
-	public function mark_issue_not_current( $p_issue_id, $p_status ) { $this->qdrant->update_payload( (int)$p_issue_id, array( 'is_currently_indexed_status' => false ) ); }
+	public function delete_issue_vector( $p_issue_id ) {
+		$t_bug = bug_get( (int)$p_issue_id, true );
+		$this->qdrant->delete_issue( (int)$p_issue_id, (int)$t_bug->project_id, project_get_name( (int)$t_bug->project_id ) );
+	}
+	public function mark_issue_not_current( $p_issue_id, $p_status ) {
+		$t_bug = bug_get( (int)$p_issue_id, true );
+		$this->qdrant->update_payload( (int)$p_issue_id, array( 'is_currently_indexed_status' => false ), (int)$t_bug->project_id, project_get_name( (int)$t_bug->project_id ) );
+	}
 
 	public function count_reindex_candidates_filtered( array $p_filters ) { $s = $this->collect_reindex_stats_filtered( $p_filters ); return (int)$s['total']; }
 

@@ -32,7 +32,7 @@ class SemanticSearchService {
 
 		$t_query_vector = $this->openai->embed( $t_query );
 		$t_fetch_limit = max( $t_limit, 50 );
-		$t_results = $this->qdrant->search( $t_query_vector, $t_fetch_limit, $t_min_score );
+		$t_results = $this->qdrant->search( $t_query_vector, $t_fetch_limit, $t_min_score, $t_project_id, $t_project_name_filter );
 
 		$t_response = array();
 		foreach( $t_results as $t_row ) {
