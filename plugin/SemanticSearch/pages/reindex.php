@@ -61,8 +61,9 @@ print_manage_menu( plugin_page( 'reindex' ) );
 					<div class="space-10"></div>
 					<div class="row">
 						<div class="col-md-7">
-							<label><input id="pending_only" type="checkbox" checked /> Solo vectorizar pendientes</label><br/>
-							<label><input id="force_revectorize" type="checkbox" /> Forzar re-vectorización (elimina vector previo y vuelve a generar)</label>
+							<label><strong>Modo de vectorización</strong></label><br/>
+							<label><input type="radio" name="vector_mode" value="pending" checked /> Solo pendientes</label><br/>
+							<label><input type="radio" name="vector_mode" value="force" /> Forzar re-vectorización total (elimina vector previo y vuelve a generar)</label>
 						</div>
 						<div class="col-md-5 text-right">
 							<button id="process_state_btn" class="btn btn-info btn-white btn-round" type="button">Revisar política</button>

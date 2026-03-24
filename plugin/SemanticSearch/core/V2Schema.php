@@ -10,6 +10,8 @@ class SemanticSearchV2Schema {
 		$this->ensure_issue();
 		$this->ensure_note();
 		$this->ensure_file();
+		$this->ensure_job_lock();
+		$this->ensure_job_run();
 	}
 
 	private function ensure_issue() {
@@ -103,6 +105,49 @@ class SemanticSearchV2Schema {
 		if( $this->column_exists( $p_table, $p_column ) ) {
 			db_query( "ALTER TABLE $p_table DROP COLUMN $p_column" );
 		}
+	}
+
+	private function ensure_job_lock() {
+		$t_table = $this->table( 'plugin_semsearch_job_lock' );
+		$t_sql = "CREATE TABLE IF NOT EXISTS $t_table (
+			Id INT NOT NULL AUTO_INCREMENT,
+			Kind VARCHAR(24) NOT NULL DEFAULT 'vectorize',
+			ScopeType VARCHAR(16) NOT NULL DEFAULT 'project',
+			ScopeProjectId INT NOT NULL DEFAULT 0,
+			RunId VARCHAR(64) NOT NULL,
+			StartedAt INT NOT NULL DEFAULT 0,
+			HeartbeatAt INT NOT NULL DEFAULT 0,
+			ExpiresAt INT NOT NULL DEFAULT 0,
+			PRIMARY KEY (Id),
+			UNIQUE KEY uniq_run (RunId),
+			KEY idx_scope (ScopeType, ScopeProjectId)
+		)";
+		db_query( $t_sql );
+	}
+
+	private function ensure_job_run() {
+		$t_table = $this->table( 'plugin_semsearch_job_run' );
+		$t_sql = "CREATE TABLE IF NOT EXISTS $t_table (
+			Id INT NOT NULL AUTO_INCREMENT,
+			RunId VARCHAR(64) NOT NULL,
+			Kind VARCHAR(24) NOT NULL,
+			ScopeType VARCHAR(16) NOT NULL,
+			ScopeProjectId INT NOT NULL DEFAULT 0,
+			Status VARCHAR(16) NOT NULL DEFAULT 'running',
+			Total INT NOT NULL DEFAULT 0,
+			Processed INT NOT NULL DEFAULT 0,
+			OkCount INT NOT NULL DEFAULT 0,
+			SkipCount INT NOT NULL DEFAULT 0,
+			FailCount INT NOT NULL DEFAULT 0,
+			StartedAt INT NOT NULL DEFAULT 0,
+			UpdatedAt INT NOT NULL DEFAULT 0,
+			FinishedAt INT NULL DEFAULT NULL,
+			Message TEXT NULL,
+			PRIMARY KEY (Id),
+			UNIQUE KEY uniq_run (RunId),
+			KEY idx_scope (ScopeType, ScopeProjectId)
+		)";
+		db_query( $t_sql );
 	}
 
 	private function column_exists( $p_table, $p_column ) {

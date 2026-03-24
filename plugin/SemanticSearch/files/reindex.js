@@ -12,13 +12,17 @@
 	const formToken = tokenHolder.value;
 
 	function v(id){ return (document.getElementById(id)?.value || '').trim(); }
-	function checked(id){ return !!document.getElementById(id)?.checked; }
+	function selectedMode(){
+		const el = document.querySelector('input[name="vector_mode"]:checked');
+		return el ? el.value : 'pending';
+	}
 	function q(params){ return new URLSearchParams(params).toString(); }
 	async function getJson(params){
 		const r = await fetch(base + '&' + q(params), { credentials:'same-origin' });
 		return r.json();
 	}
 	function buildFilters(projectId){
+		const mode = selectedMode();
 		return {
 			ajax: 1,
 			form_security_token: formToken,
@@ -27,12 +31,13 @@
 			created_from: v('created_from'),
 			created_to: v('created_to'),
 			max_issues: v('max_issues'),
-			pending_only: checked('pending_only') ? 1 : 0,
-			force_revectorize: checked('force_revectorize') ? 1 : 0,
+			pending_only: mode === 'pending' ? 1 : 0,
+			force_revectorize: mode === 'force' ? 1 : 0,
 		};
 	}
 
 	processBtn.addEventListener('click', async () => {
+		const runId = 'policy_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
 		const projectId = v('project_id');
 		const issueId = v('issue_id');
 		if(projectId === '' && issueId === ''){
@@ -51,7 +56,7 @@
 			policyInfoEl.textContent = 'Política: iniciando revisión...';
 			if(total === 0){ statusEl.textContent = 'No hay incidencias que cumplan los filtros para revisar política.'; return; }
 			while(true){
-				const step = await getJson({ ...filters, mode:'policy_batch', batch_size: batchSize, last_id:lastId, processed });
+				const step = await getJson({ ...filters, mode:'policy_batch', run_id: runId, batch_size: batchSize, last_id:lastId, processed });
 				if(!step.ok){ statusEl.textContent = 'Error: ' + (step.error || 'policy batch fallido'); break; }
 				flagged += step.flagged || 0;
 				clean += step.clean || 0;
@@ -73,6 +78,7 @@
 	});
 
 	btn.addEventListener('click', async () => {
+		const runId = 'vector_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
 		const projectId = v('project_id');
 		const issueId = v('issue_id');
 		if(projectId === '' && issueId === ''){
@@ -93,7 +99,7 @@
 			vectorInfoEl.textContent = `Vectorización → total candidatos: ${total}, pendientes: ${est.pending_total || 0}, al día: ${est.indexed_current || 0}.`;
 
 			while(true){
-				const step = await getJson({ ...filters, mode:'batch', batch_size: batchSize, last_id:lastId, processed });
+				const step = await getJson({ ...filters, mode:'batch', run_id: runId, batch_size: batchSize, last_id:lastId, processed });
 				if(!step.ok){ statusEl.textContent = 'Error: ' + (step.error || 'batch fallido'); break; }
 				ok += step.indexed || 0;
 				skip += step.skipped || 0;

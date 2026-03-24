@@ -64,8 +64,11 @@ function semsearch_call_responses_api( $p_api_key, $p_prompt ) {
 
 try {
 	$t_plugin = plugin_get( 'SemanticSearch' );
+	require_once __DIR__ . '/../core/JobControl.php';
+	$t_jobs = new SemanticSearchJobControl();
 	$t_indexer = new IssueIndexer( $t_plugin );
 	$t_dashboard = $t_indexer->get_issue_index_dashboard( $t_bug_id );
+	$t_bug_for_lock = bug_get( $t_bug_id, true );
 
 	$t_note_flags = array();
 	if( isset( $t_dashboard['notes'] ) && is_array( $t_dashboard['notes'] ) ) {
@@ -84,6 +87,9 @@ try {
 	$t_indexer->update_issue_index_policy( $t_bug_id, $t_core_indexable, $t_note_flags, $t_attachment_flags );
 
 	if( $t_mode === 'index_now' ) {
+		if( $t_jobs->is_locked_for_project( (int)$t_bug_for_lock->project_id ) ) {
+			throw new RuntimeException( 'Hay una ejecución activa para este proyecto (o global). Espere a que termine o fuerce desbloqueo desde Gestión de vectorización.' );
+		}
 		$t_indexer->index_issue( $t_bug_id, array( 'attachment_mode' => 'all' ) );
 	}
 

@@ -9,8 +9,11 @@ try {
 	require_once __DIR__ . '/../core/OpenAIEmbeddingClient.php';
 	require_once __DIR__ . '/../core/QdrantClient.php';
 	require_once __DIR__ . '/../core/IssueIndexer.php';
+	require_once __DIR__ . '/../core/JobControl.php';
 	$t_plugin = new SemanticSearchPlugin( 'SemanticSearch' );
+	$t_plugin->init();
 	$t_indexer = new IssueIndexer( $t_plugin );
+	$t_jobs = new SemanticSearchJobControl();
 } catch( Throwable $e ) {
 	if( $t_ajax ) {
 		header( 'Content-Type: application/json; charset=utf-8' );
@@ -63,20 +66,39 @@ if( $t_ajax ) {
 			return;
 		}
 
-		if( $t_mode === 'policy_batch' ) {
-			$t_last_id = gpc_get_int( 'last_id', 0 );
-			$t_processed = gpc_get_int( 'processed', 0 );
-			$t_batch_size = gpc_get_int( 'batch_size', 25 );
-			$t_state = $t_indexer->process_policy_batch_filtered( $t_filters, $t_last_id, $t_batch_size, $t_processed );
-			echo json_encode( array( 'ok' => true ) + $t_state );
+		if( $t_mode === 'force_unlock' ) {
+			$t_scope_type = gpc_get_string( 'scope_type', 'all' );
+			$t_scope_project_id = gpc_get_int( 'scope_project_id', 0 );
+			$t_jobs->force_unlock_scope( $t_scope_type, $t_scope_project_id );
+			echo json_encode( array( 'ok' => true ) );
 			return;
 		}
 
-		if( $t_mode === 'batch' ) {
+		if( $t_mode === 'policy_batch' || $t_mode === 'batch' ) {
 			$t_last_id = gpc_get_int( 'last_id', 0 );
 			$t_processed = gpc_get_int( 'processed', 0 );
 			$t_batch_size = gpc_get_int( 'batch_size', 25 );
-			$t_state = $t_indexer->reindex_batch_filtered( $t_filters, $t_last_id, $t_batch_size, $t_processed );
+			$t_run_id = gpc_get_string( 'run_id', '' );
+			if( $t_run_id === '' ) {
+				echo json_encode( array( 'ok' => false, 'error' => 'run_id requerido' ) );
+				return;
+			}
+			$t_scope_type = ( isset( $t_filters['project_id'] ) && (int)$t_filters['project_id'] === 0 ) ? 'all' : 'project';
+			$t_scope_project_id = ( $t_scope_type === 'project' ) ? (int)$t_filters['project_id'] : 0;
+			if( $t_last_id === 0 && $t_processed === 0 ) {
+				$t_lock = $t_jobs->acquire_lock( $t_mode === 'policy_batch' ? 'policy' : 'vectorize', $t_scope_type, $t_scope_project_id, $t_run_id );
+				if( empty( $t_lock['ok'] ) ) {
+					echo json_encode( array( 'ok' => false, 'error' => 'Hay otro proceso ejecutándose para este alcance.' ) );
+					return;
+				}
+			}
+			$t_jobs->heartbeat( $t_run_id );
+			$t_state = $t_mode === 'policy_batch'
+				? $t_indexer->process_policy_batch_filtered( $t_filters, $t_last_id, $t_batch_size, $t_processed )
+				: $t_indexer->reindex_batch_filtered( $t_filters, $t_last_id, $t_batch_size, $t_processed );
+			if( !empty( $t_state['done'] ) ) {
+				$t_jobs->release( $t_run_id );
+			}
 			echo json_encode( array( 'ok' => true ) + $t_state );
 			return;
 		}
