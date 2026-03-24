@@ -580,6 +580,8 @@ class SemanticV2Engine {
 
 	public function reindex_batch_filtered( array $p_filters, $p_last_id = 0, $p_batch_size = 25, $p_processed = 0 ) {
 		$t_ids = $this->list_reindex_candidate_ids( $p_filters );
+		$t_pending_only = !isset( $p_filters['pending_only'] ) || !empty( $p_filters['pending_only'] );
+		$t_force = !empty( $p_filters['force_revectorize'] );
 		$start = 0;
 		for( $i = 0; $i < count($t_ids); $i++ ) { if( $t_ids[$i] > (int)$p_last_id ) { $start = $i; break; } }
 		$chunk = array_slice( $t_ids, $start, (int)$p_batch_size );
@@ -588,13 +590,32 @@ class SemanticV2Engine {
 			$last = $id;
 			try {
 				$d = $this->get_issue_index_dashboard( $id, true );
-				if( empty( $d['has_pending_review'] ) ) { $skip++; continue; }
+				if( $t_force ) {
+					$this->force_revectorize_issue( $id );
+					$ok++;
+					continue;
+				}
+				if( $t_pending_only && empty( $d['has_pending_review'] ) ) { $skip++; continue; }
 				$this->index_issue( $id, array( 'skip_review' => true ) );
 				$ok++;
 			} catch( Throwable $e ) { $failed++; }
 		}
 		$done = ($start + count($chunk)) >= count($t_ids);
 		return array('indexed'=>$ok,'failed'=>$failed,'skipped'=>$skip,'last_id'=>$last,'seen'=>count($chunk),'done'=>$done);
+	}
+
+	private function force_revectorize_issue( $p_issue_id ) {
+		$t_issue_id = (int)$p_issue_id;
+		$t_bug = bug_get( $t_issue_id, true );
+		$t_dash = $this->review_issue_policy( $t_issue_id );
+		try { $this->delete_issue_vector( $t_issue_id ); } catch( Throwable $e ) { }
+		$t_text = $this->build_index_text( $t_bug, array(), $t_dash );
+		if( trim( $t_text ) === '' ) {
+			return;
+		}
+		$t_vector = $this->openai->embed( $t_text );
+		$this->qdrant->ensure_collection( count( $t_vector ), (int)$t_bug->project_id, project_get_name( (int)$t_bug->project_id ) );
+		$this->qdrant->upsert_issue( $t_issue_id, $t_vector, $this->build_payload( $t_bug, array() ) );
 	}
 
 	private function list_reindex_candidate_ids( array $p_filters ) {

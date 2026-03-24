@@ -59,25 +59,21 @@ print_manage_menu( plugin_page( 'reindex' ) );
 					</div>
 
 					<div class="space-10"></div>
-					<div class="text-right">
-						<button id="process_state_btn" class="btn btn-info btn-white btn-round" type="button">Revisar política</button>
-						<button id="start_reindex_btn" class="btn btn-warning btn-white btn-round" type="button">Iniciar vectorización</button>
+					<div class="row">
+						<div class="col-md-7">
+							<label><input id="pending_only" type="checkbox" checked /> Solo vectorizar pendientes</label><br/>
+							<label><input id="force_revectorize" type="checkbox" /> Forzar re-vectorización (elimina vector previo y vuelve a generar)</label>
+						</div>
+						<div class="col-md-5 text-right">
+							<button id="process_state_btn" class="btn btn-info btn-white btn-round" type="button">Revisar política</button>
+							<button id="start_reindex_btn" class="btn btn-warning btn-white btn-round" type="button">Iniciar vectorización</button>
+						</div>
 					</div>
 
 					<div class="space-10"></div>
-					<div class="row">
-						<div class="col-md-12">
-							<div class="well well-sm" style="margin-bottom:10px;">
-								<strong>Resumen v2</strong>
-								<span id="v2_action_summary" class="text-muted" style="margin-left:8px;">Acciones: N/A</span>
-								<span id="v2_review_summary" class="text-muted" style="margin-left:12px;">Niveles: N/A</span>
-							</div>
-						</div>
-					</div>
 					<div id="reindex_status" class="text-muted">Listo para iniciar.</div>
-					<div class="progress" style="height:20px;">
-						<div id="reindex_progress_bar" class="progress-bar progress-bar-warning" role="progressbar" style="width:0%">0%</div>
-					</div>
+					<div id="policy_info" class="well well-sm" style="margin-top:8px;">Política: sin ejecutar.</div>
+					<div id="vector_info" class="well well-sm" style="margin-top:8px;">Vectorización: sin ejecutar.</div>
 				</div>
 			</div>
 		</div>
@@ -92,6 +88,6 @@ print_manage_menu( plugin_page( 'reindex' ) );
 
 <input type="hidden" id="reindex_action_base" value="<?php echo string_attribute( plugin_page( 'reindex_action' ) ); ?>" />
 <input type="hidden" id="reindex_form_token" value="<?php echo string_attribute( form_security_token( 'plugin_SemanticSearch_reindex' ) ); ?>" />
-<script src="<?php echo plugin_file( 'reindex.js' ) . '&v=20260322_2104'; ?>"></script>
+<script src="<?php echo plugin_file( 'reindex.js' ) . '&v=20260324_0110'; ?>"></script>
 
 <?php layout_page_end();

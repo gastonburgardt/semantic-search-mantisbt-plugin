@@ -43,6 +43,8 @@ function semsearch_get_filters() {
 		'max_issues' => gpc_get_int( 'max_issues', 0 ),
 		'created_from_ts' => semsearch_parse_date( gpc_get_string( 'created_from', '' ), false ),
 		'created_to_ts' => semsearch_parse_date( gpc_get_string( 'created_to', '' ), true ),
+		'pending_only' => gpc_get_bool( 'pending_only', true ),
+		'force_revectorize' => gpc_get_bool( 'force_revectorize', false ),
 	);
 }
 
