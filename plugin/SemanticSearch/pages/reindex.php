@@ -90,6 +90,10 @@ print_manage_menu( plugin_page( 'reindex' ) );
 
 <input type="hidden" id="reindex_action_base" value="<?php echo string_attribute( plugin_page( 'reindex_action' ) ); ?>" />
 <input type="hidden" id="reindex_form_token" value="<?php echo string_attribute( form_security_token( 'plugin_SemanticSearch_reindex' ) ); ?>" />
-<script src="<?php echo plugin_file( 'reindex.js' ) . '&v=20260324_0225'; ?>"></script>
+<script src="<?php echo plugin_file( 'reindex.js' ) . '&v=20260324_0335'; ?>"></script>
+
+<?php layout_page_end();js' ) . '&v=20260324_0225'; ?>"></script>
+
+<?php layout_page_end();=20260324_0225'; ?>"></script>
 
 <?php layout_page_end();
