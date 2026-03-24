@@ -69,11 +69,12 @@ print_manage_menu( plugin_page( 'reindex' ) );
 							<button id="process_state_btn" class="btn btn-info btn-white btn-round" type="button">Revisar política</button>
 							<button id="start_reindex_btn" class="btn btn-warning btn-white btn-round" type="button">Iniciar vectorización</button>
 							<button id="stop_reindex_btn" class="btn btn-danger btn-white btn-round" type="button">Detener run</button>
+							<button id="refresh_status_btn" class="btn btn-default btn-white btn-round" type="button">Actualizar estado</button>
 						</div>
 					</div>
 
 					<div class="space-10"></div>
-					<div id="reindex_status" class="text-muted">Listo para iniciar.</div>
+					<div id="reindex_status" class="alert alert-info">Listo para iniciar.</div>
 					<div id="policy_info" class="well well-sm" style="margin-top:8px;">Política: sin ejecutar.</div>
 					<div id="vector_info" class="well well-sm" style="margin-top:8px;">Vectorización: sin ejecutar.</div>
 				</div>
