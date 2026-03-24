@@ -15,7 +15,7 @@ print_manage_menu( plugin_page( 'reindex' ) );
 			</div>
 			<div class="widget-body">
 				<div class="widget-main">
-					<p class="text-muted">Flujo recomendado: 1) Revisar política (Mantis + tablas de indexación), 2) Ejecutar indexación (solo tablas de indexación).</p>
+					<p class="text-muted">Flujo recomendado: 1) Revisar política (Mantis + tablas de vectorización), 2) Ejecutar vectorización (solo tablas de vectorización).</p>
 
 					<div class="row">
 						<div class="col-md-6">
@@ -61,7 +61,7 @@ print_manage_menu( plugin_page( 'reindex' ) );
 					<div class="space-10"></div>
 					<div class="text-right">
 						<button id="process_state_btn" class="btn btn-info btn-white btn-round" type="button">Revisar política</button>
-						<button id="start_reindex_btn" class="btn btn-warning btn-white btn-round" type="button">Iniciar indexación</button>
+						<button id="start_reindex_btn" class="btn btn-warning btn-white btn-round" type="button">Iniciar vectorización</button>
 					</div>
 
 					<div class="space-10"></div>

@@ -1,8 +1,8 @@
 <?php
 
-$s_plugin_SemanticSearch_description = 'Indexación y búsqueda semántica de incidencias resueltas usando OpenAI + Qdrant.';
+$s_plugin_SemanticSearch_description = 'Vectorización y búsqueda semántica de incidencias resueltas usando OpenAI + Qdrant.';
 $s_plugin_SemanticSearch_menu_semantic_search = 'Semantic Search';
-$s_plugin_SemanticSearch_menu_reindex = 'Indexación semántica';
+$s_plugin_SemanticSearch_menu_reindex = 'Vectorización semántica';
 
 $s_plugin_SemanticSearch_search_button = 'Buscar';
 $s_plugin_SemanticSearch_issue_number = 'Incidencia';
@@ -14,10 +14,10 @@ $s_plugin_SemanticSearch_open_issue = 'Abrir incidencia';
 $s_plugin_SemanticSearch_config_title = 'Configuración de Semantic Search';
 $s_plugin_SemanticSearch_action_update = 'Guardar configuración';
 
-$s_plugin_SemanticSearch_reindex_one = 'Reindexar incidencia';
-$s_plugin_SemanticSearch_reindex_all = 'Reindexar todas las resueltas';
-$s_plugin_SemanticSearch_reindex_one_done = 'Incidencia #%d reindexada';
-$s_plugin_SemanticSearch_reindex_all_done = '%d incidencias reindexadas';
+$s_plugin_SemanticSearch_reindex_one = 'Vectorizar incidencia';
+$s_plugin_SemanticSearch_reindex_all = 'Vectorizar todas las resueltas';
+$s_plugin_SemanticSearch_reindex_one_done = 'Incidencia #%d vectorizada';
+$s_plugin_SemanticSearch_reindex_all_done = '%d incidencias vectorizadas';
 
 $s_plugin_SemanticSearch_search_title = 'Búsqueda semántica';
 $s_plugin_SemanticSearch_search_help = 'Escribí en lenguaje natural lo que buscás (síntoma, error o contexto).';
@@ -26,8 +26,8 @@ $s_plugin_SemanticSearch_search_limit_label = 'Máx. resultados';
 $s_plugin_SemanticSearch_search_min_score_label = 'Score mínimo';
 $s_plugin_SemanticSearch_search_min_score_help = '0 = sin filtro. Recomendado: 0.2 a 0.4 para más precisión.';
 
-$s_plugin_SemanticSearch_index_status_title = 'Estado de indexación semántica';
-$s_plugin_SemanticSearch_index_status_indexed = 'Indexado';
-$s_plugin_SemanticSearch_index_status_not_indexed = 'No indexado';
-$s_plugin_SemanticSearch_index_status_last_update = 'Última indexación';
-$s_plugin_SemanticSearch_index_status_reindex_cta = 'Abrir reindexación';
+$s_plugin_SemanticSearch_index_status_title = 'Estado de vectorización semántica';
+$s_plugin_SemanticSearch_index_status_indexed = 'Vectorizado';
+$s_plugin_SemanticSearch_index_status_not_indexed = 'No vectorizado';
+$s_plugin_SemanticSearch_index_status_last_update = 'Última vectorización';
+$s_plugin_SemanticSearch_index_status_reindex_cta = 'Abrir vectorización';

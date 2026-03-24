@@ -243,9 +243,9 @@ class SemanticSearchPlugin extends MantisPlugin {
 			$t_translate_action = function( $p_action ) {
 				$t_action = (string)$p_action;
 				if( $t_action === 'Nothing' ) { return 'SinAccion'; }
-				if( $t_action === 'CreateIndex' ) { return 'CrearIndice'; }
-				if( $t_action === 'UpdateIndex' ) { return 'ActualizarIndice'; }
-				if( $t_action === 'DeleteIndex' ) { return 'EliminarIndice'; }
+				if( $t_action === 'CreateIndex' ) { return 'CrearVector'; }
+				if( $t_action === 'UpdateIndex' ) { return 'ActualizarVector'; }
+				if( $t_action === 'DeleteIndex' ) { return 'EliminarVector'; }
 				return $t_action;
 			};
 			$t_translate_review = function( $p_level ) {
@@ -261,27 +261,27 @@ class SemanticSearchPlugin extends MantisPlugin {
 				$t_empty = !empty( $p_row['empty'] );
 				$t_indexable = !empty( $p_row['indexable'] );
 				$t_indexed = !empty( $p_row['indexed'] );
-				if( $t_action === 'CreateIndex' ) { return 'Pendiente de alta en índice (indexable y aún no indexado).'; }
-				if( $t_action === 'UpdateIndex' ) { return 'Pendiente de actualización (cambió desde la última indexación).'; }
-				if( $t_action === 'DeleteIndex' ) { return 'Pendiente de borrado del índice (ya no debe estar indexado).'; }
+				if( $t_action === 'CreateIndex' ) { return 'Pendiente de alta en vector (vectorizable y aún no vectorizado).'; }
+				if( $t_action === 'UpdateIndex' ) { return 'Pendiente de actualización (cambió desde la última vectorización).'; }
+				if( $t_action === 'DeleteIndex' ) { return 'Pendiente de borrado del vector (ya no debe estar vectorizado).'; }
 				if( !empty( $p_row['deleted'] ) ) { return 'Elemento marcado como eliminado en origen.'; }
 				if( !$t_indexable ) { return 'Sin acción: marcado como no indexable.'; }
 				if( $t_empty ) { return 'Sin acción: contenido vacío.'; }
-				if( $t_indexed ) { return 'Sin acción: indexado y sin cambios pendientes.'; }
+				if( $t_indexed ) { return 'Sin acción: vectorizado y sin cambios pendientes.'; }
 				return 'Sin acción.';
 			};
 
 			echo '<div class="col-md-12 col-xs-12 semsearch-wrapper">';
 			echo '<div class="space-10"></div>';
 			echo '<div class="widget-box widget-color-blue2 semsearch-box">';
-			echo '<div class="widget-header widget-header-small"><h4 class="widget-title lighter">Indexación semántica</h4></div>';
+			echo '<div class="widget-header widget-header-small"><h4 class="widget-title lighter">Vectorización semántica</h4></div>';
 			echo '<div class="widget-body"><div class="widget-main">';
 			echo '<style>.semsearch-kpi{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}.semsearch-kpi .item{background:#f7f8fa;border:1px solid #d8dce3;border-radius:6px;padding:6px 10px;font-size:12px}.semsearch-actions{margin-top:10px;text-align:right}.semsearch-actions .btn{margin-left:6px}.semsearch-stack{display:block}.semsearch-stack .box{border:1px solid #d8dce3;border-radius:6px;padding:8px;background:#fff;margin-bottom:10px}.semsearch-subbox{margin-top:10px;margin-left:16px;border-left:3px solid #d8dce3;padding-left:10px}.semsearch-subbox.level2{margin-left:28px;border-left-color:#c7ced9}.semsearch-meta{margin:10px 0}.semsearch-meta table td,.semsearch-meta table th{font-size:12px}.semsearch-flow{font-size:12px;color:#555;background:#f7f8fa;border:1px solid #d8dce3;border-radius:6px;padding:6px 10px;margin:8px 0 10px 0}</style>';
 
 			if( $t_has_pending_review ) {
-				echo '<div class="alert alert-warning" style="margin-bottom:10px;"><strong>⚑ Pendiente de revisión:</strong> ' . $t_pending_review_count . ' alteraciones, para indexar: ' . $t_effective_to_index . ', para borrar: ' . $t_effective_to_delete . '.</div>';
+				echo '<div class="alert alert-warning" style="margin-bottom:10px;"><strong>⚑ Pendiente de revisión:</strong> ' . $t_pending_review_count . ' alteraciones, para vectorizar: ' . $t_effective_to_index . ', para borrar: ' . $t_effective_to_delete . '.</div>';
 			} else {
-				echo '<div class="alert alert-success" style="margin-bottom:10px;"><strong>✓ Sin pendientes:</strong> no hay elementos indexables por procesar en este issue.</div>';
+				echo '<div class="alert alert-success" style="margin-bottom:10px;"><strong>✓ Sin pendientes:</strong> no hay elementos vectorizables por procesar en este issue.</div>';
 			}
 
 			echo '<form method="post" action="' . plugin_page( 'attachment_index_action' ) . '">';
@@ -289,7 +289,7 @@ class SemanticSearchPlugin extends MantisPlugin {
 			echo '<input type="hidden" name="bug_id" value="' . (int)$p_bug_id . '" />';
 
 			echo '<div class="semsearch-flow"><strong>Relación:</strong> Core del incidente → Notas del core → Archivos de cada nota.</div>';
-			echo '<div class="semsearch-meta"><h5 style="margin-top:0;">1) Core del incidente (tabla semsearch_issue)</h5><div class="table-responsive"><table class="table table-condensed table-bordered"><thead><tr><th>Indexable</th><th>Issue</th><th>Vacío</th><th>Eliminado</th><th>Indexado</th><th>Acción</th><th>Nivel</th><th>Motivo</th><th>Fecha Creado</th><th>Fecha Actualizado</th><th>Fecha Indexado</th></tr></thead><tbody>';
+			echo '<div class="semsearch-meta"><h5 style="margin-top:0;">1) Core del incidente (tabla semsearch_issue)</h5><div class="table-responsive"><table class="table table-condensed table-bordered"><thead><tr><th>Vectorizable</th><th>Issue</th><th>Vacío</th><th>Eliminado</th><th>Vectorizado</th><th>Acción</th><th>Nivel</th><th>Motivo</th><th>Fecha Creado</th><th>Fecha Actualizado</th><th>Fecha Vectorizado</th></tr></thead><tbody>';
 			echo '<tr>';
 			echo '<td><input type="checkbox" name="core_indexable" value="1" ' . ( !empty($t_core['indexable']) ? 'checked' : '' ) . ' /></td>';
 			echo '<td>#' . (int)$p_bug_id . '</td>';
@@ -304,7 +304,7 @@ class SemanticSearchPlugin extends MantisPlugin {
 			echo '<td>' . ( !empty($t_core['indexed_at']) ? date( 'Y-m-d H:i:s', (int)$t_core['indexed_at'] ) : '-' ) . '</td>';
 			echo '</tr></tbody></table></div>';
 
-			echo '<div class="semsearch-subbox"><h5 style="margin-top:0;">2) Notas del core (tabla semsearch_issuenote)</h5><div class="table-responsive"><table class="table table-condensed table-striped table-bordered"><thead><tr><th style="width:90px;">Indexable</th><th>Nota</th><th style="width:70px;">Vacío</th><th style="width:80px;">Eliminado</th><th style="width:80px;">Indexado</th><th style="width:120px;">Acción</th><th style="width:130px;">Nivel revisión</th><th>Motivo</th><th style="width:120px;">Fecha Creado</th><th style="width:120px;">Fecha Actualizado</th><th style="width:120px;">Fecha Indexado</th></tr></thead><tbody>';
+			echo '<div class="semsearch-subbox"><h5 style="margin-top:0;">2) Notas del core (tabla semsearch_issuenote)</h5><div class="table-responsive"><table class="table table-condensed table-striped table-bordered"><thead><tr><th style="width:90px;">Vectorizable</th><th>Nota</th><th style="width:70px;">Vacío</th><th style="width:80px;">Eliminado</th><th style="width:80px;">Vectorizado</th><th style="width:120px;">Acción</th><th style="width:130px;">Nivel revisión</th><th>Motivo</th><th style="width:120px;">Fecha Creado</th><th style="width:120px;">Fecha Actualizado</th><th style="width:120px;">Fecha Vectorizado</th></tr></thead><tbody>';
 			foreach( $t_notes as $t_note ) {
 				echo '<tr>';
 				echo '<td><input type="checkbox" name="note_ids[]" value="' . (int)$t_note['id'] . '" ' . ( !empty($t_note['indexable']) ? 'checked' : '' ) . ' /></td>';
@@ -323,7 +323,7 @@ class SemanticSearchPlugin extends MantisPlugin {
 			}
 			echo '</tbody></table></div>';
 
-			echo '<div class="semsearch-subbox level2"><h5 style="margin-top:0;">3) Archivos de las notas (tabla semsearch_issuenotefile)</h5><div class="table-responsive"><table class="table table-condensed table-striped table-bordered"><thead><tr><th style="width:90px;">Indexable</th><th>Archivo</th><th style="width:70px;">Vacío</th><th style="width:80px;">Eliminado</th><th style="width:80px;">Indexado</th><th style="width:120px;">Acción</th><th style="width:130px;">Nivel revisión</th><th>Motivo</th><th style="width:120px;">Fecha Creado</th><th style="width:120px;">Fecha Actualizado</th><th style="width:120px;">Fecha Indexado</th><th style="width:120px;">Nota</th></tr></thead><tbody>';
+			echo '<div class="semsearch-subbox level2"><h5 style="margin-top:0;">3) Archivos de las notas (tabla semsearch_issuenotefile)</h5><div class="table-responsive"><table class="table table-condensed table-striped table-bordered"><thead><tr><th style="width:90px;">Vectorizable</th><th>Archivo</th><th style="width:70px;">Vacío</th><th style="width:80px;">Eliminado</th><th style="width:80px;">Vectorizado</th><th style="width:120px;">Acción</th><th style="width:130px;">Nivel revisión</th><th>Motivo</th><th style="width:120px;">Fecha Creado</th><th style="width:120px;">Fecha Actualizado</th><th style="width:120px;">Fecha Vectorizado</th><th style="width:120px;">Nota</th></tr></thead><tbody>';
 			foreach( $t_attachments as $t_file ) {
 				$t_extra = '';
 				if( !empty($t_file['blocked_by_note']) && !empty($t_file['blocked_by_core']) ) { $t_extra .= ' (bloq. por nota y core)'; }
@@ -353,7 +353,7 @@ class SemanticSearchPlugin extends MantisPlugin {
 			echo '<button type="submit" class="btn btn-xs btn-info" name="mode" value="similar_now">Obtener similares</button>';
 			echo '<button type="submit" class="btn btn-xs btn-success" name="mode" value="solution_now">Obtener posible solución</button>';
 			echo '<button type="submit" class="btn btn-xs btn-default" name="mode" value="save_policy">Guardar política</button>';
-			echo '<button type="submit" class="btn btn-xs btn-primary" name="mode" value="index_now">Guardar e indexar ahora</button>';
+			echo '<button type="submit" class="btn btn-xs btn-primary" name="mode" value="index_now">Guardar y vectorizar ahora</button>';
 			echo '</div>';
 			echo '</form>';
 			echo '</div></div></div></div>';

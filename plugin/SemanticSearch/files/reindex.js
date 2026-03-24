@@ -19,7 +19,7 @@
 		bar.style.width = pct + '%';
 		bar.textContent = pct + '%';
 		const pendingText = typeof pending === 'number' ? `, pendientes: ${pending}` : '';
-		statusEl.textContent = `Procesados: ${done}/${total} (reindexados: ${ok}, omitidos: ${skip}, fallos: ${fail}${pendingText})`;
+		statusEl.textContent = `Procesados: ${done}/${total} (vectorizados: ${ok}, omitidos: ${skip}, fallos: ${fail}${pendingText})`;
 	}
 	async function getJson(params){
 		const r = await fetch(base + '&' + q(params), { credentials:'same-origin' });
@@ -68,7 +68,7 @@
 				const pct = total > 0 ? Math.min(100, Math.round(processed * 100 / total)) : 0;
 				bar.style.width = pct + '%';
 				bar.textContent = pct + '%';
-				statusEl.textContent = `Revisión de política: ${processed}/${total} (con cambios pendientes: ${flagged}, para indexar: ${toIndex}, para borrar: ${toDelete}, sin pendientes: ${clean}, fallos: ${fail})`;
+				statusEl.textContent = `Revisión de política: ${processed}/${total} (con cambios pendientes: ${flagged}, para vectorizar: ${toIndex}, para borrar: ${toDelete}, sin pendientes: ${clean}, fallos: ${fail})`;
 				if(step.done){ break; }
 			}
 		} catch(e) {
