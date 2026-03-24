@@ -141,6 +141,10 @@ class SemanticSearchV2Schema {
 			FailCount INT NOT NULL DEFAULT 0,
 			StartedAt INT NOT NULL DEFAULT 0,
 			UpdatedAt INT NOT NULL DEFAULT 0,
+			HeartbeatAt INT NOT NULL DEFAULT 0,
+			StopRequested TINYINT NOT NULL DEFAULT 0,
+			LastId INT NOT NULL DEFAULT 0,
+			FiltersJson TEXT NULL,
 			FinishedAt INT NULL DEFAULT NULL,
 			Message TEXT NULL,
 			PRIMARY KEY (Id),
@@ -148,6 +152,10 @@ class SemanticSearchV2Schema {
 			KEY idx_scope (ScopeType, ScopeProjectId)
 		)";
 		db_query( $t_sql );
+		$this->ensure_column( $t_table, 'HeartbeatAt', 'INT NOT NULL DEFAULT 0' );
+		$this->ensure_column( $t_table, 'StopRequested', 'TINYINT NOT NULL DEFAULT 0' );
+		$this->ensure_column( $t_table, 'LastId', 'INT NOT NULL DEFAULT 0' );
+		$this->ensure_column( $t_table, 'FiltersJson', 'TEXT NULL' );
 	}
 
 	private function column_exists( $p_table, $p_column ) {

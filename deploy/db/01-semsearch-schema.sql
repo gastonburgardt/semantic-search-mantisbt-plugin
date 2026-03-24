@@ -51,3 +51,42 @@ CREATE TABLE IF NOT EXISTS __PLUGIN_PREFIX__semsearch_issuenotefile (
   NivelDeRevision VARCHAR(24) NOT NULL DEFAULT 'NoRevisarNada',
   PRIMARY KEY (FileId, NoteId, IssueId)
 );
+
+CREATE TABLE IF NOT EXISTS __PLUGIN_PREFIX__semsearch_job_lock (
+  Id INT NOT NULL AUTO_INCREMENT,
+  Kind VARCHAR(24) NOT NULL DEFAULT 'vectorize',
+  ScopeType VARCHAR(16) NOT NULL DEFAULT 'project',
+  ScopeProjectId INT NOT NULL DEFAULT 0,
+  RunId VARCHAR(64) NOT NULL,
+  StartedAt INT NOT NULL DEFAULT 0,
+  HeartbeatAt INT NOT NULL DEFAULT 0,
+  ExpiresAt INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (Id),
+  UNIQUE KEY uniq_run (RunId),
+  KEY idx_scope (ScopeType, ScopeProjectId)
+);
+
+CREATE TABLE IF NOT EXISTS __PLUGIN_PREFIX__semsearch_job_run (
+  Id INT NOT NULL AUTO_INCREMENT,
+  RunId VARCHAR(64) NOT NULL,
+  Kind VARCHAR(24) NOT NULL,
+  ScopeType VARCHAR(16) NOT NULL,
+  ScopeProjectId INT NOT NULL DEFAULT 0,
+  Status VARCHAR(16) NOT NULL DEFAULT 'running',
+  Total INT NOT NULL DEFAULT 0,
+  Processed INT NOT NULL DEFAULT 0,
+  OkCount INT NOT NULL DEFAULT 0,
+  SkipCount INT NOT NULL DEFAULT 0,
+  FailCount INT NOT NULL DEFAULT 0,
+  StartedAt INT NOT NULL DEFAULT 0,
+  UpdatedAt INT NOT NULL DEFAULT 0,
+  HeartbeatAt INT NOT NULL DEFAULT 0,
+  StopRequested TINYINT NOT NULL DEFAULT 0,
+  LastId INT NOT NULL DEFAULT 0,
+  FiltersJson TEXT NULL,
+  FinishedAt INT NULL DEFAULT NULL,
+  Message TEXT NULL,
+  PRIMARY KEY (Id),
+  UNIQUE KEY uniq_run (RunId),
+  KEY idx_scope (ScopeType, ScopeProjectId)
+);

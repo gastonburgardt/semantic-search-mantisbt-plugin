@@ -23,7 +23,6 @@ try {
 	throw $e;
 }
 
-/** @return int unix ts start/end day */
 function semsearch_parse_date( $p_value, $p_end_of_day = false ) {
 	$t_value = trim( (string)$p_value );
 	if( $t_value === '' ) {
@@ -51,18 +50,88 @@ function semsearch_get_filters() {
 	);
 }
 
+function semsearch_spawn_background_worker( $p_run_id, $p_kind, $p_batch_size ) {
+	$t_php = defined( 'PHP_BINARY' ) && PHP_BINARY ? PHP_BINARY : 'php';
+	$t_worker = __DIR__ . '/reindex_worker.php';
+	$t_log = sys_get_temp_dir() . '/semsearch_' . preg_replace( '/[^a-zA-Z0-9_-]/', '', $p_run_id ) . '.log';
+	$t_cmd = sprintf(
+		"nohup %s %s --run_id=%s --kind=%s --batch_size=%d > %s 2>&1 & echo $!",
+		escapeshellarg( $t_php ),
+		escapeshellarg( $t_worker ),
+		escapeshellarg( $p_run_id ),
+		escapeshellarg( $p_kind ),
+		(int)$p_batch_size,
+		escapeshellarg( $t_log )
+	);
+	$t_out = array();
+	$t_code = 1;
+	@exec( $t_cmd, $t_out, $t_code );
+	if( $t_code !== 0 ) {
+		throw new RuntimeException( 'No se pudo iniciar worker background.' );
+	}
+	$t_pid = isset( $t_out[0] ) ? (int)trim( $t_out[0] ) : 0;
+	return array( 'pid' => $t_pid, 'log' => $t_log );
+}
+
 if( $t_ajax ) {
 	header( 'Content-Type: application/json; charset=utf-8' );
 	$t_filters = semsearch_get_filters();
-	if( ( !isset( $t_filters['project_id'] ) || $t_filters['project_id'] === null ) && ( !isset( $t_filters['issue_id'] ) || (int)$t_filters['issue_id'] <= 0 ) ) {
-		echo json_encode( array( 'ok' => false, 'error' => 'Debe indicar Proyecto o Issue ID.' ) );
-		return;
-	}
+	$t_jobs->unlock_stale_locks( 120 );
 
 	try {
 		if( $t_mode === 'estimate' ) {
+			if( ( !isset( $t_filters['project_id'] ) || $t_filters['project_id'] === null ) && ( !isset( $t_filters['issue_id'] ) || (int)$t_filters['issue_id'] <= 0 ) ) {
+				echo json_encode( array( 'ok' => false, 'error' => 'Debe indicar Proyecto o Issue ID.' ) );
+				return;
+			}
 			$t_stats = $t_indexer->collect_reindex_stats_filtered( $t_filters );
 			echo json_encode( array( 'ok' => true ) + $t_stats );
+			return;
+		}
+
+		if( $t_mode === 'start_policy' || $t_mode === 'start_vector' ) {
+			if( ( !isset( $t_filters['project_id'] ) || $t_filters['project_id'] === null ) && ( !isset( $t_filters['issue_id'] ) || (int)$t_filters['issue_id'] <= 0 ) ) {
+				echo json_encode( array( 'ok' => false, 'error' => 'Debe indicar Proyecto o Issue ID.' ) );
+				return;
+			}
+			list( $scope_type, $scope_project_id ) = $t_jobs->compute_scope( $t_filters );
+			$t_kind = $t_mode === 'start_policy' ? 'policy' : 'vectorize';
+			$t_run_id = $t_kind . '_' . date( 'Ymd_His' ) . '_' . bin2hex( random_bytes( 3 ) );
+			$t_batch_size = max( 1, gpc_get_int( 'batch_size', 25 ) );
+			$t_total = (int)$t_indexer->count_reindex_candidates_filtered( $t_filters );
+			$t_lock = $t_jobs->acquire_lock( $t_kind, $scope_type, $scope_project_id, $t_run_id );
+			if( empty( $t_lock['ok'] ) ) {
+				echo json_encode( array( 'ok' => false, 'error' => 'Hay otro proceso ejecutándose para este alcance.', 'run_id' => isset( $t_lock['run_id'] ) ? $t_lock['run_id'] : '' ) );
+				return;
+			}
+			$t_jobs->create_run( $t_kind, $scope_type, $scope_project_id, $t_run_id, $t_filters, $t_total );
+			$t_spawn = semsearch_spawn_background_worker( $t_run_id, $t_kind, $t_batch_size );
+			echo json_encode( array( 'ok' => true, 'run_id' => $t_run_id, 'total' => $t_total, 'pid' => $t_spawn['pid'] ) );
+			return;
+		}
+
+		if( $t_mode === 'status' ) {
+			$t_run_id = gpc_get_string( 'run_id', '' );
+			if( $t_run_id !== '' ) {
+				$t_run = $t_jobs->get_run( $t_run_id );
+				echo json_encode( array( 'ok' => true, 'run' => $t_run ) );
+				return;
+			}
+			$t_kind = gpc_get_string( 'kind', 'vectorize' );
+			list( $scope_type, $scope_project_id ) = $t_jobs->compute_scope( $t_filters );
+			$t_run = $t_jobs->get_last_run( $t_kind, $scope_type, $scope_project_id );
+			echo json_encode( array( 'ok' => true, 'run' => $t_run ) );
+			return;
+		}
+
+		if( $t_mode === 'stop' ) {
+			$t_run_id = gpc_get_string( 'run_id', '' );
+			if( $t_run_id === '' ) {
+				echo json_encode( array( 'ok' => false, 'error' => 'run_id requerido' ) );
+				return;
+			}
+			$t_jobs->request_stop( $t_run_id );
+			echo json_encode( array( 'ok' => true ) );
 			return;
 		}
 
@@ -71,35 +140,6 @@ if( $t_ajax ) {
 			$t_scope_project_id = gpc_get_int( 'scope_project_id', 0 );
 			$t_jobs->force_unlock_scope( $t_scope_type, $t_scope_project_id );
 			echo json_encode( array( 'ok' => true ) );
-			return;
-		}
-
-		if( $t_mode === 'policy_batch' || $t_mode === 'batch' ) {
-			$t_last_id = gpc_get_int( 'last_id', 0 );
-			$t_processed = gpc_get_int( 'processed', 0 );
-			$t_batch_size = gpc_get_int( 'batch_size', 25 );
-			$t_run_id = gpc_get_string( 'run_id', '' );
-			if( $t_run_id === '' ) {
-				echo json_encode( array( 'ok' => false, 'error' => 'run_id requerido' ) );
-				return;
-			}
-			$t_scope_type = ( isset( $t_filters['project_id'] ) && (int)$t_filters['project_id'] === 0 ) ? 'all' : 'project';
-			$t_scope_project_id = ( $t_scope_type === 'project' ) ? (int)$t_filters['project_id'] : 0;
-			if( $t_last_id === 0 && $t_processed === 0 ) {
-				$t_lock = $t_jobs->acquire_lock( $t_mode === 'policy_batch' ? 'policy' : 'vectorize', $t_scope_type, $t_scope_project_id, $t_run_id );
-				if( empty( $t_lock['ok'] ) ) {
-					echo json_encode( array( 'ok' => false, 'error' => 'Hay otro proceso ejecutándose para este alcance.' ) );
-					return;
-				}
-			}
-			$t_jobs->heartbeat( $t_run_id );
-			$t_state = $t_mode === 'policy_batch'
-				? $t_indexer->process_policy_batch_filtered( $t_filters, $t_last_id, $t_batch_size, $t_processed )
-				: $t_indexer->reindex_batch_filtered( $t_filters, $t_last_id, $t_batch_size, $t_processed );
-			if( !empty( $t_state['done'] ) ) {
-				$t_jobs->release( $t_run_id );
-			}
-			echo json_encode( array( 'ok' => true ) + $t_state );
 			return;
 		}
 	} catch( Throwable $e ) {
@@ -112,7 +152,6 @@ if( $t_ajax ) {
 	return;
 }
 
-# backward compatible manual action
 form_security_validate( 'plugin_SemanticSearch_reindex' );
 try {
 	if( $t_mode === 'single' ) {

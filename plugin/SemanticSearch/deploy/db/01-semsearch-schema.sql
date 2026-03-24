@@ -1,8 +1,7 @@
--- SemanticSearch (MantisBT) schema script
--- Author: Gaston Burgardt
--- Target DB: mantisbt (MariaDB/MySQL)
+-- SemanticSearch schema (template)
+-- Reemplazar __PLUGIN_PREFIX__ antes de ejecutar (ej: mantis_plugin_ o mantisplugin_)
 
-CREATE TABLE IF NOT EXISTS mantisplugin_semsearch_issue (
+CREATE TABLE IF NOT EXISTS __PLUGIN_PREFIX__semsearch_issue (
   IssueId INT NOT NULL,
   CreatedAt INT NOT NULL DEFAULT 0,
   UpdatedAt INT NOT NULL DEFAULT 0,
@@ -18,7 +17,7 @@ CREATE TABLE IF NOT EXISTS mantisplugin_semsearch_issue (
   PRIMARY KEY (IssueId)
 );
 
-CREATE TABLE IF NOT EXISTS mantisplugin_semsearch_issuenote (
+CREATE TABLE IF NOT EXISTS __PLUGIN_PREFIX__semsearch_issuenote (
   NoteId INT NOT NULL,
   IssueId INT NOT NULL,
   CreatedAt INT NOT NULL DEFAULT 0,
@@ -35,7 +34,7 @@ CREATE TABLE IF NOT EXISTS mantisplugin_semsearch_issuenote (
   PRIMARY KEY (NoteId, IssueId)
 );
 
-CREATE TABLE IF NOT EXISTS mantisplugin_semsearch_issuenotefile (
+CREATE TABLE IF NOT EXISTS __PLUGIN_PREFIX__semsearch_issuenotefile (
   FileId INT NOT NULL,
   NoteId INT NOT NULL DEFAULT 0,
   IssueId INT NOT NULL,
@@ -53,3 +52,41 @@ CREATE TABLE IF NOT EXISTS mantisplugin_semsearch_issuenotefile (
   PRIMARY KEY (FileId, NoteId, IssueId)
 );
 
+CREATE TABLE IF NOT EXISTS __PLUGIN_PREFIX__semsearch_job_lock (
+  Id INT NOT NULL AUTO_INCREMENT,
+  Kind VARCHAR(24) NOT NULL DEFAULT 'vectorize',
+  ScopeType VARCHAR(16) NOT NULL DEFAULT 'project',
+  ScopeProjectId INT NOT NULL DEFAULT 0,
+  RunId VARCHAR(64) NOT NULL,
+  StartedAt INT NOT NULL DEFAULT 0,
+  HeartbeatAt INT NOT NULL DEFAULT 0,
+  ExpiresAt INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (Id),
+  UNIQUE KEY uniq_run (RunId),
+  KEY idx_scope (ScopeType, ScopeProjectId)
+);
+
+CREATE TABLE IF NOT EXISTS __PLUGIN_PREFIX__semsearch_job_run (
+  Id INT NOT NULL AUTO_INCREMENT,
+  RunId VARCHAR(64) NOT NULL,
+  Kind VARCHAR(24) NOT NULL,
+  ScopeType VARCHAR(16) NOT NULL,
+  ScopeProjectId INT NOT NULL DEFAULT 0,
+  Status VARCHAR(16) NOT NULL DEFAULT 'running',
+  Total INT NOT NULL DEFAULT 0,
+  Processed INT NOT NULL DEFAULT 0,
+  OkCount INT NOT NULL DEFAULT 0,
+  SkipCount INT NOT NULL DEFAULT 0,
+  FailCount INT NOT NULL DEFAULT 0,
+  StartedAt INT NOT NULL DEFAULT 0,
+  UpdatedAt INT NOT NULL DEFAULT 0,
+  HeartbeatAt INT NOT NULL DEFAULT 0,
+  StopRequested TINYINT NOT NULL DEFAULT 0,
+  LastId INT NOT NULL DEFAULT 0,
+  FiltersJson TEXT NULL,
+  FinishedAt INT NULL DEFAULT NULL,
+  Message TEXT NULL,
+  PRIMARY KEY (Id),
+  UNIQUE KEY uniq_run (RunId),
+  KEY idx_scope (ScopeType, ScopeProjectId)
+);
