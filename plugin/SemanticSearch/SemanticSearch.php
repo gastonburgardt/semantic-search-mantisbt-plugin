@@ -274,7 +274,7 @@ class SemanticSearchPlugin extends MantisPlugin {
 			echo '<div class="col-md-12 col-xs-12 semsearch-wrapper">';
 			echo '<div class="space-10"></div>';
 			echo '<div class="widget-box widget-color-blue2 semsearch-box">';
-			echo '<div class="widget-header widget-header-small"><h4 class="widget-title lighter">Vectorización semántica</h4></div>';
+			echo '<div class="widget-header widget-header-small"><h4 class="widget-title lighter">Gestión de vectorización</h4></div>';
 			echo '<div class="widget-body"><div class="widget-main">';
 			echo '<style>.semsearch-kpi{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}.semsearch-kpi .item{background:#f7f8fa;border:1px solid #d8dce3;border-radius:6px;padding:6px 10px;font-size:12px}.semsearch-actions{margin-top:10px;text-align:right}.semsearch-actions .btn{margin-left:6px}.semsearch-stack{display:block}.semsearch-stack .box{border:1px solid #d8dce3;border-radius:6px;padding:8px;background:#fff;margin-bottom:10px}.semsearch-subbox{margin-top:10px;margin-left:16px;border-left:3px solid #d8dce3;padding-left:10px}.semsearch-subbox.level2{margin-left:28px;border-left-color:#c7ced9}.semsearch-meta{margin:10px 0}.semsearch-meta table td,.semsearch-meta table th{font-size:12px}.semsearch-flow{font-size:12px;color:#555;background:#f7f8fa;border:1px solid #d8dce3;border-radius:6px;padding:6px 10px;margin:8px 0 10px 0}</style>';
 

@@ -2,7 +2,7 @@
 
 $s_plugin_SemanticSearch_description = 'Vectorización y búsqueda semántica de incidencias resueltas usando OpenAI + Qdrant.';
 $s_plugin_SemanticSearch_menu_semantic_search = 'Semantic Search';
-$s_plugin_SemanticSearch_menu_reindex = 'Vectorización semántica';
+$s_plugin_SemanticSearch_menu_reindex = 'Gestión de vectorización';
 
 $s_plugin_SemanticSearch_search_button = 'Buscar';
 $s_plugin_SemanticSearch_issue_number = 'Incidencia';
@@ -26,7 +26,7 @@ $s_plugin_SemanticSearch_search_limit_label = 'Máx. resultados';
 $s_plugin_SemanticSearch_search_min_score_label = 'Score mínimo';
 $s_plugin_SemanticSearch_search_min_score_help = '0 = sin filtro. Recomendado: 0.2 a 0.4 para más precisión.';
 
-$s_plugin_SemanticSearch_index_status_title = 'Estado de vectorización semántica';
+$s_plugin_SemanticSearch_index_status_title = 'Estado de vectorización';
 $s_plugin_SemanticSearch_index_status_indexed = 'Vectorizado';
 $s_plugin_SemanticSearch_index_status_not_indexed = 'No vectorizado';
 $s_plugin_SemanticSearch_index_status_last_update = 'Última vectorización';
