@@ -16,7 +16,7 @@ if( $run_id === '' || ( $kind !== 'policy' && $kind !== 'vectorize' ) ) {
 	exit( 2 );
 }
 
-$t_root = dirname( dirname( dirname( dirname( __DIR__ ) ) ) );
+$t_root = dirname( dirname( dirname( __DIR__ ) ) );
 require_once $t_root . '/core.php';
 require_once dirname( __DIR__ ) . '/SemanticSearch.php';
 require_once dirname( __DIR__ ) . '/core/OpenAIEmbeddingClient.php';

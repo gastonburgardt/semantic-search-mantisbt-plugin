@@ -558,7 +558,7 @@ class SemanticV2Engine {
 
 	public function process_policy_batch_filtered( array $p_filters, $p_last_id = 0, $p_batch_size = 25, $p_processed = 0 ) {
 		$t_ids = $this->list_reindex_candidate_ids( $p_filters );
-		$start = 0;
+		$start = count( $t_ids );
 		for( $i = 0; $i < count($t_ids); $i++ ) { if( $t_ids[$i] > (int)$p_last_id ) { $start = $i; break; } }
 		$chunk = array_slice( $t_ids, $start, (int)$p_batch_size );
 		$flagged=0;$clean=0;$failed=0;$to_index=0;$to_delete=0;$last=(int)$p_last_id;
@@ -582,7 +582,7 @@ class SemanticV2Engine {
 		$t_ids = $this->list_reindex_candidate_ids( $p_filters );
 		$t_pending_only = !isset( $p_filters['pending_only'] ) || !empty( $p_filters['pending_only'] );
 		$t_force = !empty( $p_filters['force_revectorize'] );
-		$start = 0;
+		$start = count( $t_ids );
 		for( $i = 0; $i < count($t_ids); $i++ ) { if( $t_ids[$i] > (int)$p_last_id ) { $start = $i; break; } }
 		$chunk = array_slice( $t_ids, $start, (int)$p_batch_size );
 		$ok=0;$failed=0;$skip=0;$last=(int)$p_last_id;
