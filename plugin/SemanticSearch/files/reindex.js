@@ -35,6 +35,8 @@
 			max_issues: v('max_issues'),
 			pending_only: mode === 'pending' ? 1 : 0,
 			force_revectorize: mode === 'force' ? 1 : 0,
+			heartbeat_timeout: 120,
+			stall_confirm_seconds: 120,
 		};
 	}
 	function setRunning(running){
@@ -80,6 +82,68 @@
 		}, 2000);
 	}
 
+	async function maybeForceUnlockAndRetry(resp, filters, mode, kind){
+		if(!resp || !resp.confirm_restart) return null;
+		const stalled = parseInt(resp.stalled_seconds || 0, 10);
+		const minStalled = parseInt(resp.stall_confirm_seconds || 0, 10);
+		const runId = resp.run_id || '(sin run_id)';
+		const ok = window.confirm(
+			`Hay un run bloqueando (${runId}) sin heartbeat hace ${stalled}s (umbral ${minStalled}s).\n\n` +
+			`¿Querés forzar desbloqueo y lanzar nuevamente ${kind === 'policy' ? 'la revisión de política' : 'la vectorización'}?`
+		);
+		if(!ok){
+			setStatus('Proceso bloqueado por otro run. No se relanzó.', 'warning');
+			return { handled:true, started:false };
+		}
+		const unlock = await getJson({
+			ajax:1,
+			form_security_token: formToken,
+			mode:'force_unlock',
+			scope_type: resp.scope_type || 'all',
+			scope_project_id: resp.scope_project_id || 0,
+		});
+		if(!unlock.ok){
+			setStatus('No se pudo desbloquear: ' + (unlock.error || 'error desconocido'), 'danger');
+			return { handled:true, started:false };
+		}
+		const retry = await getJson({ ...filters, mode, batch_size: Math.max(1, parseInt(v('batch_size') || '25', 10)) });
+		if(!retry.ok){
+			setStatus('Desbloqueado, pero no se pudo relanzar: ' + (retry.error || 'error desconocido'), 'danger');
+			return { handled:true, started:false };
+		}
+		startPoll(kind, retry.run_id, filters);
+		setStatus(`Run de ${kind === 'policy' ? 'política' : 'vectorización'} relanzado tras desbloqueo.`, 'warning');
+		return { handled:true, started:true };
+	}
+
+	async function startRun(mode, kind){
+		const projectId = v('project_id');
+		const issueId = v('issue_id');
+		if(projectId === '' && issueId === ''){ setStatus('Debés indicar Proyecto o Issue ID.', 'danger'); return; }
+		const filters = buildFilters(projectId);
+		const batchSize = Math.max(1, parseInt(v('batch_size') || '25', 10));
+		setRunning(true);
+		if(kind === 'policy'){
+			policyInfoEl.innerHTML = '<strong>Política:</strong> iniciando en background...';
+		}else{
+			vectorInfoEl.innerHTML = '<strong>Vectorización:</strong> iniciando en background...';
+		}
+		try {
+			const resp = await getJson({ ...filters, mode, batch_size: batchSize });
+			if(!resp.ok){
+				const retry = await maybeForceUnlockAndRetry(resp, filters, mode, kind);
+				if(!retry || !retry.started){ setRunning(false); }
+				if(!retry){ setStatus('Error al iniciar: ' + (resp.error || 'no se pudo iniciar'), 'danger'); }
+				return;
+			}
+			setStatus(`Run de ${kind === 'policy' ? 'política' : 'vectorización'} iniciado.`, 'warning');
+			startPoll(kind, resp.run_id, filters);
+		} catch(e){
+			setStatus('Error: ' + e.message, 'danger');
+			setRunning(false);
+		}
+	}
+
 	setRunning(false);
 
 	refreshBtn.addEventListener('click', async () => {
@@ -109,35 +173,6 @@
 		}
 	});
 
-	processBtn.addEventListener('click', async () => {
-		const projectId = v('project_id');
-		const issueId = v('issue_id');
-		if(projectId === '' && issueId === ''){ setStatus('Debés indicar Proyecto o Issue ID.', 'danger'); return; }
-		const filters = buildFilters(projectId);
-		const batchSize = Math.max(1, parseInt(v('batch_size') || '25', 10));
-		setRunning(true);
-		policyInfoEl.innerHTML = '<strong>Política:</strong> iniciando en background...';
-		try {
-			const resp = await getJson({ ...filters, mode:'start_policy', batch_size: batchSize });
-			if(!resp.ok){ setStatus('Error al iniciar: ' + (resp.error || 'no se pudo iniciar'), 'danger'); setRunning(false); return; }
-			setStatus('Run de política iniciado.', 'warning');
-			startPoll('policy', resp.run_id, filters);
-		} catch(e){ setStatus('Error: ' + e.message, 'danger'); setRunning(false); }
-	});
-
-	btn.addEventListener('click', async () => {
-		const projectId = v('project_id');
-		const issueId = v('issue_id');
-		if(projectId === '' && issueId === ''){ setStatus('Debés indicar Proyecto o Issue ID.', 'danger'); return; }
-		const filters = buildFilters(projectId);
-		const batchSize = Math.max(1, parseInt(v('batch_size') || '25', 10));
-		setRunning(true);
-		vectorInfoEl.innerHTML = '<strong>Vectorización:</strong> iniciando en background...';
-		try {
-			const resp = await getJson({ ...filters, mode:'start_vector', batch_size: batchSize });
-			if(!resp.ok){ setStatus('Error al iniciar: ' + (resp.error || 'no se pudo iniciar'), 'danger'); setRunning(false); return; }
-			setStatus('Run de vectorización iniciado.', 'warning');
-			startPoll('vectorize', resp.run_id, filters);
-		} catch(e){ setStatus('Error: ' + e.message, 'danger'); setRunning(false); }
-	});
+	processBtn.addEventListener('click', async () => startRun('start_policy', 'policy'));
+	btn.addEventListener('click', async () => startRun('start_vector', 'vectorize'));
 })();

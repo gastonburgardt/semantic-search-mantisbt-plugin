@@ -2,203 +2,114 @@
 
 Autor: **Gaston Burgardt**
 
-Plugin de MantisBT para:
-- gestionar política de indexación semántica por jerarquía (`Issue -> Note -> File`),
-- ejecutar indexación vectorial en Qdrant,
-- buscar incidencias por semántica (OpenAI embeddings + Qdrant).
+Plugin para MantisBT que implementa:
+- Política semántica por jerarquía `Issue -> IssueNote -> IssueNoteFile`
+- Vectorización en Qdrant (OpenAI embeddings)
+- Búsqueda semántica y generación de solución sugerida
 
 ---
 
-## 1) Objetivo funcional
+## Objetivo
 
-El plugin separa claramente dos procesos:
+Separar con claridad:
 
-1. **Revisar política**
-   - Recorre Mantis + tablas de control del plugin.
-   - Decide `Action` y `NivelDeRevision` por nodo.
-   - No indexa; deja estado preparado.
+1. **Revisión de política** (no vectoriza):
+   - sincroniza inventario Mantis vs tablas de control,
+   - calcula `Action` y `NivelDeRevision`.
 
-2. **Indexar**
-   - Toma solo lo pendiente en tablas de control.
-   - Ejecuta `CreateIndex / UpdateIndex / DeleteIndex`.
-   - Actualiza estado final (`Indexed`, `IndexedAt`, `Action=Nothing`, etc.).
+2. **Vectorización**:
+   - ejecuta sólo pendientes (`CreateIndex / UpdateIndex / DeleteIndex`),
+   - normaliza estado final (`Action=Nothing`, `NivelDeRevision=NoRevisarNada`).
 
 ---
 
-## 2) Stack de software
+## Arquitectura
 
-- **PHP 8.x** (plugin MantisBT)
-- **MantisBT 2.25+**
-- **MariaDB/MySQL** (tablas de control del plugin)
-- **OpenAI Embeddings API**
-- **Qdrant** (almacenamiento vectorial)
-- **JS vanilla** para UI de reindex por lotes
-
----
-
-## 3) Estructura de carpetas
-
-> Proyecto resuelto en 3 piezas operativas:
-> 1. plugin MantisBT,
-> 2. script de BD Mantis,
-> 3. stack Qdrant + `.env`.
-
-```text
-SemanticSearch/
-├── SemanticSearch.php                 # clase principal del plugin (registro, hooks, panel issue)
-├── README.md                          # documentación principal
-├── core/
-│   ├── IssueIndexer.php               # entrypoint del motor v2
-│   ├── OpenAIEmbeddingClient.php      # cliente OpenAI embeddings
-│   ├── QdrantClient.php               # cliente Qdrant
-│   ├── SemanticSearchService.php      # búsqueda semántica
-│   ├── V2Schema.php                   # ensure/migración de schema plugin
-│   └── v2/
-│       ├── SemanticDomain.php         # constantes de dominio (acciones/niveles/tipos)
-│       ├── SemanticIssueInventoryRepository.php  # lectura de Mantis (issue/note/file)
-│       ├── SemanticPolicyRepository.php          # persistencia tablas plugin
-│       └── SemanticV2Engine.php                 # núcleo de política + indexación + batch
-├── pages/
-│   ├── config_page.php                # UI configuración
-│   ├── config.php                     # guardado configuración
-│   ├── search.php                     # UI búsqueda semántica
-│   ├── reindex.php                    # UI proceso por lotes
-│   ├── reindex_action.php             # endpoint AJAX de revisión/indexación
-│   └── attachment_index_action.php    # guardar política / indexar desde issue
-├── files/
-│   └── reindex.js                     # frontend del proceso batch
-├── lang/
-│   ├── strings_spanish.txt            # textos ES
-│   └── strings_english.txt            # textos EN
-├── deploy/
-│   ├── .env                             # variables de entorno de despliegue
-│   ├── db/
-│   │   └── 01-semsearch-schema.sql      # script SQL de tablas plugin en Mantis
-│   └── qdrant/
-│       └── docker-compose.yml           # stack de Qdrant
-└── docs/
-    └── (documentación operativa adicional)
-```
+- `SemanticSearch.php`: registro, hooks, panel de issue
+- `core/v2/SemanticV2Engine.php`: motor principal (policy + vectorize)
+- `core/JobControl.php`: control de runs globales (lock, heartbeat, stop, stale unlock)
+- `pages/reindex.php`: UI admin
+- `pages/reindex_action.php`: API AJAX para runs batch
+- `pages/reindex_worker.php`: worker background
+- `files/reindex.js`: frontend de gestión de runs
 
 ---
 
-## 4) Modelo de datos (tablas de control)
+## Requisitos
 
-Tablas activas:
-- `mantisplugin_semsearch_issue`
-- `mantisplugin_semsearch_issuenote`
-- `mantisplugin_semsearch_issuenotefile`
+- MantisBT 2.25+
+- PHP 8+
+- MariaDB/MySQL
+- Qdrant accesible desde el contenedor/app (`SEMSEARCH_QDRANT_URL`)
+- `OPENAI_API_KEY`
 
-Campos clave por tabla (según nivel):
-- IDs de nodo (IssueId / NoteId / FileId)
-- `CreatedAt`, `UpdatedAt`, `IndexedAt`
-- `Indexable`, `Empty`, `Indexed`
-- `Hash`
-- `Action` (`Nothing|CreateIndex|UpdateIndex|DeleteIndex`)
-- `NivelDeRevision` (`NoRevisarNada|SoloYo|YoYMisHijos|SoloMisHijos`)
+> Sin Qdrant, la revisión de política puede funcionar pero la vectorización fallará.
 
 ---
 
-## 5) Flujo de ejecución
+## Modelo y reglas
 
-### A) Hooks automáticos
-- update de issue
-- alta/edición/baja de nota
+Tablas de control:
+- `*_plugin_semsearch_issue`
+- `*_plugin_semsearch_issuenote`
+- `*_plugin_semsearch_issuenotefile`
+- `*_plugin_semsearch_job_run`
+- `*_plugin_semsearch_job_lock`
 
-Estos hooks disparan **revisión de política** para mantener tablas en estado consistente.
+Acciones válidas:
+- `Nothing | CreateIndex | UpdateIndex | DeleteIndex`
 
-### B) Desde el issue (panel "Indexación semántica")
-- Guardar política
-- Guardar e indexar ahora
+Niveles válidos:
+- Issue/Note: `NoRevisarNada | SoloYo | YoYMisHijos | SoloMisHijos`
+- File: `NoRevisarNada | SoloYo`
 
-### C) Reindex general
-Pantalla batch con filtros:
-- proyecto
-- issue puntual opcional
-- fecha de creación (desde/hasta)
-- lote y tope
-
----
-
-## 6) Criterios de decisión (resumen)
-
-- Si `Indexable=false` y `Indexed=true` => `DeleteIndex`
-- Si `Indexable=false` y `Indexed=false` => `Nothing`
-- Si `Empty=true` => `Nothing`
-- Si `Indexable=true` y `Indexed=false` => `CreateIndex`
-- Si `Indexable=true` y `Indexed=true`:
-  - hash igual => `Nothing`
-  - hash distinto / actualización fuente posterior => `UpdateIndex`
-
-Además, se respeta jerarquía (padre -> hijos) para casos de bloqueo/cascada.
+Regla base:
+- `Indexable=false + Indexed=true => DeleteIndex`
+- `Indexable=true + Indexed=false => CreateIndex`
+- `Indexable=true + Indexed=true + hash cambió => UpdateIndex`
+- `Empty=true => Nothing`
 
 ---
 
-## 7) Configuración importante
+## Reindex admin (batch)
 
-En `config_page.php`:
-- URL y colección de Qdrant
-- modelo de embeddings
-- `top_k`, `min_score`
-- incluir notas / adjuntos
-- estados de Mantis considerados indexables
-- comportamiento al pasar a no indexable
+La pantalla admin (`plugin.php?page=SemanticSearch/reindex`) opera con runs en background:
+
+- **Revisar política**
+- **Iniciar vectorización**
+- **Detener run**
+- **Actualizar estado**
+
+### Recuperación por lock stale
+
+Si ya existe un run en lock y su heartbeat está vencido, el backend responde:
+- `confirm_restart=true`
+- `stalled_seconds`
+
+El frontend muestra confirmación para:
+1. forzar unlock del scope,
+2. relanzar automáticamente el run.
+
+Esto evita el bloqueo permanente por procesos caídos.
 
 ---
 
-## 8) Despliegue rápido (DB + Qdrant + env)
+## Despliegue rápido
 
-### A) Variables
-Editar:
-- `deploy/.env`
+1. Aplicar schema SQL de plugin (`deploy/db/01-semsearch-schema.sql`).
+2. Levantar Qdrant (`deploy/qdrant/docker-compose.yml`) o apuntar a uno existente.
+3. Definir env vars al app:
+   - `OPENAI_API_KEY`
+   - `SEMSEARCH_QDRANT_URL`
+4. Instalar/actualizar plugin en Mantis.
 
-### B) Qdrant
-Desde `deploy/qdrant/`:
+---
 
-```bash
-cp ../.env .env
-docker compose up -d
-```
+## Checklist de validación
 
-### C) Script BD Mantis
-Aplicar `deploy/db/01-semsearch-schema.sql` sobre la BD `mantisbt`.
-
-Ejemplo:
-
-```bash
-mariadb -u mantisbt -p mantisbt < deploy/db/01-semsearch-schema.sql
-```
-
-## 10) Publicación y autoría en GitHub
-
-Si vas a subir este plugin a GitHub con autoría tuya:
-
-```bash
-git config user.name "Gaston Burgardt"
-git config user.email "tu-email@dominio.com"
-```
-
-Commit sugerido:
-
-```bash
-git add plugins/SemanticSearch
-git commit -m "docs: agregar README de arquitectura y estructura de SemanticSearch"
-```
-
-Si querés autor explícito en un commit puntual:
-
-```bash
-git commit --author="Gaston Burgardt <tu-email@dominio.com>" -m "..."
-```
-
-Luego push al remoto de GitHub que definas.
-uctura de SemanticSearch"
-```
-
-Si querés autor explícito en un commit puntual:
-
-```bash
-git commit --author="Gaston Burgardt <tu-email@dominio.com>" -m "..."
-```
-
-Luego push al remoto de GitHub que definas.
+1. Crear incidente nuevo y marcar indexable en panel del issue.
+2. Ejecutar **Revisar política** en admin.
+3. Verificar `Action` pendiente (`Create/Update/Delete`).
+4. Ejecutar **Vectorización**.
+5. Verificar estado final `Action=Nothing` y `Indexed` coherente.
+6. Simular stale lock y validar prompt de relanzar.

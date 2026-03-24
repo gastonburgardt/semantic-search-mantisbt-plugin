@@ -76,7 +76,9 @@ function semsearch_spawn_background_worker( $p_run_id, $p_kind, $p_batch_size ) 
 if( $t_ajax ) {
 	header( 'Content-Type: application/json; charset=utf-8' );
 	$t_filters = semsearch_get_filters();
-	$t_jobs->unlock_stale_locks( 120 );
+	$t_heartbeat_timeout = max( 30, gpc_get_int( 'heartbeat_timeout', 120 ) );
+	$t_stall_confirm_seconds = max( 30, gpc_get_int( 'stall_confirm_seconds', $t_heartbeat_timeout ) );
+	$t_jobs->unlock_stale_locks( $t_heartbeat_timeout );
 
 	try {
 		if( $t_mode === 'estimate' ) {
@@ -99,9 +101,33 @@ if( $t_ajax ) {
 			$t_run_id = $t_kind . '_' . date( 'Ymd_His' ) . '_' . bin2hex( random_bytes( 3 ) );
 			$t_batch_size = max( 1, gpc_get_int( 'batch_size', 25 ) );
 			$t_total = (int)$t_indexer->count_reindex_candidates_filtered( $t_filters );
-			$t_lock = $t_jobs->acquire_lock( $t_kind, $scope_type, $scope_project_id, $t_run_id );
+			$t_lock = $t_jobs->acquire_lock( $t_kind, $scope_type, $scope_project_id, $t_run_id, $t_heartbeat_timeout );
 			if( empty( $t_lock['ok'] ) ) {
-				echo json_encode( array( 'ok' => false, 'error' => 'Hay otro proceso ejecutándose para este alcance.', 'run_id' => isset( $t_lock['run_id'] ) ? $t_lock['run_id'] : '' ) );
+				$t_locked_run_id = isset( $t_lock['run_id'] ) ? (string)$t_lock['run_id'] : '';
+				$t_locked_run = $t_locked_run_id !== '' ? $t_jobs->get_run( $t_locked_run_id ) : null;
+				$t_now = time();
+				$t_last_heartbeat = 0;
+				if( is_array( $t_locked_run ) && isset( $t_locked_run['HeartbeatAt'] ) ) {
+					$t_last_heartbeat = (int)$t_locked_run['HeartbeatAt'];
+				}
+				$t_stalled_seconds = $t_last_heartbeat > 0 ? max( 0, $t_now - $t_last_heartbeat ) : 0;
+				$t_confirm_restart = $t_last_heartbeat > 0 && $t_stalled_seconds >= $t_stall_confirm_seconds;
+
+				$t_resp = array(
+					'ok' => false,
+					'error' => 'Hay otro proceso ejecutándose para este alcance.',
+					'run_id' => $t_locked_run_id,
+					'confirm_restart' => $t_confirm_restart,
+					'stalled_seconds' => $t_stalled_seconds,
+					'stall_confirm_seconds' => $t_stall_confirm_seconds,
+					'scope_type' => $scope_type,
+					'scope_project_id' => $scope_project_id,
+				);
+				if( is_array( $t_locked_run ) ) {
+					$t_resp['locked_run_status'] = isset( $t_locked_run['Status'] ) ? (string)$t_locked_run['Status'] : '';
+					$t_resp['locked_run_heartbeat_at'] = isset( $t_locked_run['HeartbeatAt'] ) ? (int)$t_locked_run['HeartbeatAt'] : 0;
+				}
+				echo json_encode( $t_resp );
 				return;
 			}
 			$t_jobs->create_run( $t_kind, $scope_type, $scope_project_id, $t_run_id, $t_filters, $t_total );
