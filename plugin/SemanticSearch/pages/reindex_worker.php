@@ -27,6 +27,21 @@ require_once dirname( __DIR__ ) . '/core/QdrantClient.php';
 require_once dirname( __DIR__ ) . '/core/IssueIndexer.php';
 require_once dirname( __DIR__ ) . '/core/JobControl.php';
 
+function semsearch_worker_login() {
+	$t_user_table = db_get_table( 'user' );
+	$t_res = db_query( "SELECT username FROM $t_user_table WHERE enabled=1 AND access_level >= " . db_param() . ' ORDER BY access_level DESC, id ASC LIMIT 1', array( ADMINISTRATOR ) );
+	if( db_num_rows( $t_res ) === 0 ) {
+		throw new RuntimeException( 'No hay un usuario administrador habilitado para ejecutar el worker.' );
+	}
+	$t_row = db_fetch_array( $t_res );
+	$t_username = isset( $t_row['username'] ) ? trim( (string)$t_row['username'] ) : '';
+	if( $t_username === '' || !auth_attempt_script_login( $t_username ) ) {
+		throw new RuntimeException( 'No se pudo autenticar el worker como script.' );
+	}
+}
+
+semsearch_worker_login();
+
 $t_plugin = new SemanticSearchPlugin( 'SemanticSearch' );
 $t_plugin->init();
 $t_jobs = new SemanticSearchJobControl();
