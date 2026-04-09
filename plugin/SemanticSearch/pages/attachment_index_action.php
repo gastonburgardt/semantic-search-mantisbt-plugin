@@ -62,6 +62,15 @@ function semsearch_call_responses_api( $p_api_key, $p_prompt ) {
 	return 'No se pudo generar solución: respuesta sin contenido útil.';
 }
 
+function semsearch_compact_text( $p_text, $p_limit = 1800 ) {
+	$t_text = trim( preg_replace( '/\s+/u', ' ', (string)$p_text ) );
+	$t_limit = (int)$p_limit;
+	if( $t_limit < 1 || mb_strlen( $t_text, 'UTF-8' ) <= $t_limit ) {
+		return $t_text;
+	}
+	return rtrim( mb_substr( $t_text, 0, $t_limit, 'UTF-8' ) ) . '...';
+}
+
 try {
 	$t_plugin = plugin_get( 'SemanticSearch' );
 	require_once __DIR__ . '/../core/JobControl.php';
@@ -106,7 +115,7 @@ try {
 		if( trim( $t_context ) === '' ) {
 			$t_context = trim( (string)$t_bug->summary . "\n" . (string)$t_bug->description );
 		}
-		$t_query = $t_mode === 'solution_now' ? ("¿Qué solución tiene este problema?\n\n" . $t_context) : $t_context;
+		$t_query = $t_mode === 'solution_now' ? ( "¿Qué solución tiene este problema?\n\n" . $t_context ) : $t_context;
 		$t_results = $t_service->search( $t_query, $t_similar_limit + 5, $t_similar_min_score, (int)$t_bug->project_id, null );
 
 		$t_lines = array();
@@ -116,13 +125,37 @@ try {
 
 		$t_count = 0;
 		$t_similar_lines = array();
+		$t_similar_context_blocks = array();
 		foreach( $t_results as $t_row ) {
 			$t_candidate_id = isset( $t_row['issue_id'] ) ? (int)$t_row['issue_id'] : 0;
 			if( $t_candidate_id <= 0 || $t_candidate_id === (int)$t_bug_id ) {
 				continue;
 			}
+
 			$t_count++;
 			$t_similar_lines[] = '- #' . $t_candidate_id . ' | score=' . sprintf( '%.4f', (float)$t_row['score'] ) . ' | ' . (string)$t_row['summary'];
+
+			if( $t_mode === 'solution_now' ) {
+				try {
+					$t_candidate_bug = bug_get( $t_candidate_id, true );
+					$t_candidate_dashboard = $t_indexer->get_issue_index_dashboard( $t_candidate_id );
+					$t_candidate_context = $t_indexer->build_index_text( $t_candidate_bug, array(), $t_candidate_dashboard );
+					if( trim( $t_candidate_context ) === '' ) {
+						$t_candidate_context = trim( (string)$t_candidate_bug->summary . "\n" . (string)$t_candidate_bug->description );
+					}
+					$t_similar_context_blocks[] =
+						'Incidente #' . $t_candidate_id .
+						' | score=' . sprintf( '%.4f', (float)$t_row['score'] ) .
+						' | resumen=' . trim( (string)$t_candidate_bug->summary ) .
+						"\nContexto indexable:\n" . semsearch_compact_text( $t_candidate_context );
+				} catch( Throwable $t_candidate_error ) {
+					$t_similar_context_blocks[] =
+						'Incidente #' . $t_candidate_id .
+						' | score=' . sprintf( '%.4f', (float)$t_row['score'] ) .
+						' | resumen=' . (string)$t_row['summary'];
+				}
+			}
+
 			if( $t_count >= $t_similar_limit ) {
 				break;
 			}
@@ -139,7 +172,9 @@ try {
 				$t_lines[] = $t_solution;
 			} else {
 				$t_lines[] = 'Se encontraron ' . $t_count . ' incidentes similares y se usaron como contexto interno para generar la solución.';
-				$t_prompt = "Problema actual:\n" . $t_context . "\n\nIncidentes similares:\n" . implode( "\n", $t_similar_lines ) . "\n\nDame una solución concreta para este problema basada en la información anterior.";
+				$t_prompt = "Problema actual:\n" . $t_context .
+					"\n\nIncidentes similares relevantes del mismo proyecto:\n" . implode( "\n\n", $t_similar_context_blocks ) .
+					"\n\nDame una solución concreta para este problema basada en la información anterior. Prioriza la evidencia presente en notas y adjuntos indexables de los incidentes similares, no solo sus resúmenes.";
 				$t_api_key = (string)$t_plugin->get_setting( 'openai_api_key', '', 'OPENAI_API_KEY' );
 				$t_solution = semsearch_call_responses_api( $t_api_key, $t_prompt );
 				$t_lines[] = '';
