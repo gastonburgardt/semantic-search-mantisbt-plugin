@@ -172,6 +172,15 @@ class SemanticSearchPlugin extends MantisPlugin {
 		return $t_env_key ? $t_env_key : '';
 	}
 
+	private function plugin_config_read( $p_config_key, $p_default = null ) {
+		plugin_push_current( 'SemanticSearch' );
+		try {
+			return plugin_config_get( $p_config_key, $p_default );
+		} finally {
+			plugin_pop_current();
+		}
+	}
+
 	public function get_setting( $p_config_key, $p_default, $p_env_key = '' ) {
 		if( !empty( $p_env_key ) ) {
 			$t_env_value = getenv( $p_env_key );
@@ -180,7 +189,7 @@ class SemanticSearchPlugin extends MantisPlugin {
 			}
 		}
 
-		$t_config_value = plugin_config_get( $p_config_key, null );
+		$t_config_value = $this->plugin_config_read( $p_config_key, null );
 		if( $t_config_value === null || $t_config_value === '' ) {
 			return $p_default;
 		}
