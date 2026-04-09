@@ -50,38 +50,63 @@ function semsearch_get_filters() {
 	);
 }
 
-function semsearch_spawn_background_worker( $p_run_id, $p_kind, $p_batch_size ) {
-	$t_php = 'php';
-	if( defined( 'PHP_BINDIR' ) ) {
-		$t_php_candidate = rtrim( (string)PHP_BINDIR, '/\\' ) . DIRECTORY_SEPARATOR . 'php';
-		if( is_file( $t_php_candidate ) && is_executable( $t_php_candidate ) ) {
-			$t_php = $t_php_candidate;
+function semsearch_filters_from_run( array $p_run ) {
+	$t_filters = array();
+	if( !empty( $p_run['FiltersJson'] ) ) {
+		$t_decoded = json_decode( (string)$p_run['FiltersJson'], true );
+		if( is_array( $t_decoded ) ) {
+			$t_filters = $t_decoded;
 		}
-	} elseif( defined( 'PHP_BINARY' ) && PHP_BINARY ) {
-		$t_php = (string)PHP_BINARY;
 	}
-	$t_worker = __DIR__ . '/reindex_worker.php';
-	$t_log = sys_get_temp_dir() . '/semsearch_' . preg_replace( '/[^a-zA-Z0-9_-]/', '', $p_run_id ) . '.log';
-	$t_cmd = sprintf(
-		"nohup %s %s --run_id=%s --kind=%s --batch_size=%d > %s 2>&1 & echo $!",
-		escapeshellarg( $t_php ),
-		escapeshellarg( $t_worker ),
-		escapeshellarg( $p_run_id ),
-		escapeshellarg( $p_kind ),
-		(int)$p_batch_size,
-		escapeshellarg( $t_log )
-	);
-	$t_out = array();
-	$t_code = 1;
-	@exec( $t_cmd, $t_out, $t_code );
-	if( $t_code !== 0 ) {
-		throw new RuntimeException( 'No se pudo iniciar worker background.' );
+	return $t_filters;
+}
+
+function semsearch_process_run_tick( array $p_run, SemanticSearchJobControl $p_jobs, IssueIndexer $p_indexer, $p_heartbeat_timeout ) {
+	$t_run_id = isset( $p_run['RunId'] ) ? (string)$p_run['RunId'] : '';
+	$t_kind = isset( $p_run['Kind'] ) ? (string)$p_run['Kind'] : '';
+	if( $t_run_id === '' || ( $t_kind !== 'policy' && $t_kind !== 'vectorize' ) ) {
+		return $p_run;
 	}
-	$t_pid = isset( $t_out[0] ) ? (int)trim( $t_out[0] ) : 0;
-	if( $t_pid <= 0 ) {
-		throw new RuntimeException( 'Worker background sin PID vÃ¡lido.' );
+	if( isset( $p_run['Status'] ) && (string)$p_run['Status'] !== 'running' ) {
+		return $p_run;
 	}
-	return array( 'pid' => $t_pid, 'log' => $t_log );
+
+	$t_filters = semsearch_filters_from_run( $p_run );
+	$t_batch_size = isset( $t_filters['batch_size'] ) ? max( 1, (int)$t_filters['batch_size'] ) : 25;
+	$t_last_id = isset( $p_run['LastId'] ) ? (int)$p_run['LastId'] : 0;
+
+	if( $p_jobs->stop_requested( $t_run_id ) ) {
+		$p_jobs->finish( $t_run_id, 'stopped', 'Detenido por usuario' );
+		return $p_jobs->get_run( $t_run_id );
+	}
+
+	$p_jobs->heartbeat( $t_run_id, $p_heartbeat_timeout );
+	try {
+		if( $t_kind === 'policy' ) {
+			$t_step = $p_indexer->process_policy_batch_filtered( $t_filters, $t_last_id, $t_batch_size, 0 );
+			$p_jobs->update_progress( $t_run_id, array(
+				'ok' => (int)$t_step['flagged'] + (int)$t_step['clean'],
+				'skip' => 0,
+				'fail' => (int)$t_step['failed'],
+				'seen' => (int)$t_step['seen'],
+			), (int)$t_step['last_id'] );
+		} else {
+			$t_step = $p_indexer->reindex_batch_filtered( $t_filters, $t_last_id, $t_batch_size, 0 );
+			$p_jobs->update_progress( $t_run_id, array(
+				'ok' => (int)$t_step['indexed'],
+				'skip' => (int)$t_step['skipped'],
+				'fail' => (int)$t_step['failed'],
+				'seen' => (int)$t_step['seen'],
+			), (int)$t_step['last_id'] );
+		}
+		if( !empty( $t_step['done'] ) ) {
+			$p_jobs->finish( $t_run_id, 'done', 'Completado' );
+		}
+	} catch( Throwable $e ) {
+		$p_jobs->finish( $t_run_id, 'failed', $e->getMessage() );
+	}
+
+	return $p_jobs->get_run( $t_run_id );
 }
 
 if( $t_ajax ) {
@@ -111,6 +136,7 @@ if( $t_ajax ) {
 			$t_kind = $t_mode === 'start_policy' ? 'policy' : 'vectorize';
 			$t_run_id = $t_kind . '_' . date( 'Ymd_His' ) . '_' . bin2hex( random_bytes( 3 ) );
 			$t_batch_size = max( 1, gpc_get_int( 'batch_size', 25 ) );
+			$t_filters['batch_size'] = $t_batch_size;
 			$t_total = (int)$t_indexer->count_reindex_candidates_filtered( $t_filters );
 			$t_lock = $t_jobs->acquire_lock( $t_kind, $scope_type, $scope_project_id, $t_run_id, $t_heartbeat_timeout );
 			if( empty( $t_lock['ok'] ) ) {
@@ -142,13 +168,7 @@ if( $t_ajax ) {
 				return;
 			}
 			$t_jobs->create_run( $t_kind, $scope_type, $scope_project_id, $t_run_id, $t_filters, $t_total );
-			try {
-				$t_spawn = semsearch_spawn_background_worker( $t_run_id, $t_kind, $t_batch_size );
-			} catch( Throwable $e ) {
-				$t_jobs->finish( $t_run_id, 'failed', 'No se pudo iniciar worker background: ' . $e->getMessage() );
-				throw $e;
-			}
-			echo json_encode( array( 'ok' => true, 'run_id' => $t_run_id, 'total' => $t_total, 'pid' => $t_spawn['pid'] ) );
+			echo json_encode( array( 'ok' => true, 'run_id' => $t_run_id, 'total' => $t_total, 'pid' => 0 ) );
 			return;
 		}
 
@@ -156,6 +176,9 @@ if( $t_ajax ) {
 			$t_run_id = gpc_get_string( 'run_id', '' );
 			if( $t_run_id !== '' ) {
 				$t_run = $t_jobs->get_run( $t_run_id );
+				if( is_array( $t_run ) ) {
+					$t_run = semsearch_process_run_tick( $t_run, $t_jobs, $t_indexer, $t_heartbeat_timeout );
+				}
 				echo json_encode( array( 'ok' => true, 'run' => $t_run ) );
 				return;
 			}
