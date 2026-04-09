@@ -75,26 +75,18 @@ class QdrantClient {
 	public function search( array $p_query_vector, $p_limit, $p_min_score, $p_project_id = null, $p_project_name = '' ) {
 		$t_project_id = $p_project_id === null ? 0 : (int)$p_project_id;
 		$t_collection = $this->collection_name_for_project( $t_project_id, $p_project_name );
-		$t_url = $this->base_url() . '/collections/' . rawurlencode( $t_collection ) . '/points/search';
-		$t_request = array(
-			'vector' => $p_query_vector,
-			'limit' => (int)$p_limit,
-			'with_payload' => true,
-		);
-		if( $p_min_score > 0 ) {
-			$t_request['score_threshold'] = (float)$p_min_score;
-		}
+		return $this->search_collection( $t_collection, $p_query_vector, $p_limit, $p_min_score );
+	}
 
-		$t_response = $this->request( $t_url, 'POST', json_encode( $t_request ) );
-		if( $t_response['status'] === 404 ) {
-			return array();
+	public function search_all_projects( array $p_query_vector, $p_limit, $p_min_score ) {
+		$t_results = array();
+		foreach( $this->list_collections() as $t_collection ) {
+			$t_collection_results = $this->search_collection( $t_collection, $p_query_vector, $p_limit, $p_min_score );
+			foreach( $t_collection_results as $t_row ) {
+				$t_results[] = $t_row;
+			}
 		}
-		if( $t_response['status'] < 200 || $t_response['status'] >= 300 ) {
-			throw new RuntimeException( 'Qdrant search failed: HTTP ' . $t_response['status'] . ' - ' . $t_response['body'] );
-		}
-
-		$t_json = json_decode( $t_response['body'], true );
-		return isset( $t_json['result'] ) && is_array( $t_json['result'] ) ? $t_json['result'] : array();
+		return $t_results;
 	}
 
 	public function delete_issue( $p_issue_id, $p_project_id = 0, $p_project_name = '' ) {
@@ -132,8 +124,55 @@ class QdrantClient {
 		return $this->base_url() . '/collections/' . rawurlencode( $p_collection_name );
 	}
 
+	private function list_collections() {
+		$t_response = $this->request( $this->base_url() . '/collections', 'GET' );
+		if( $t_response['status'] < 200 || $t_response['status'] >= 300 ) {
+			throw new RuntimeException( 'Qdrant collections list failed: HTTP ' . $t_response['status'] . ' - ' . $t_response['body'] );
+		}
+
+		$t_json = json_decode( $t_response['body'], true );
+		$t_items = isset( $t_json['result']['collections'] ) && is_array( $t_json['result']['collections'] )
+			? $t_json['result']['collections']
+			: array();
+		$t_collections = array();
+		$t_default_collection = $this->get_collection_name();
+		foreach( $t_items as $t_item ) {
+			$t_name = isset( $t_item['name'] ) ? trim( (string)$t_item['name'] ) : '';
+			if( $t_name === '' ) {
+				continue;
+			}
+			if( $t_name === $t_default_collection || preg_match( '/^[0-9]+_/', $t_name ) ) {
+				$t_collections[] = $t_name;
+			}
+		}
+		return $t_collections;
+	}
+
 	private function base_url() {
 		return rtrim( $this->plugin->get_setting( 'qdrant_url', 'http://qdrant:6333', 'SEMSEARCH_QDRANT_URL' ), '/' );
+	}
+
+	private function search_collection( $p_collection, array $p_query_vector, $p_limit, $p_min_score ) {
+		$t_url = $this->base_url() . '/collections/' . rawurlencode( $p_collection ) . '/points/search';
+		$t_request = array(
+			'vector' => $p_query_vector,
+			'limit' => (int)$p_limit,
+			'with_payload' => true,
+		);
+		if( $p_min_score > 0 ) {
+			$t_request['score_threshold'] = (float)$p_min_score;
+		}
+
+		$t_response = $this->request( $t_url, 'POST', json_encode( $t_request ) );
+		if( $t_response['status'] === 404 ) {
+			return array();
+		}
+		if( $t_response['status'] < 200 || $t_response['status'] >= 300 ) {
+			throw new RuntimeException( 'Qdrant search failed: HTTP ' . $t_response['status'] . ' - ' . $t_response['body'] );
+		}
+
+		$t_json = json_decode( $t_response['body'], true );
+		return isset( $t_json['result'] ) && is_array( $t_json['result'] ) ? $t_json['result'] : array();
 	}
 
 	private function request( $p_url, $p_method, $p_body = null ) {

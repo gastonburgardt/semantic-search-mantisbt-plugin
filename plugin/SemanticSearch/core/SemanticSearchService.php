@@ -32,13 +32,30 @@ class SemanticSearchService {
 
 		$t_query_vector = $this->openai->embed( $t_query );
 		$t_fetch_limit = max( $t_limit, 50 );
-		$t_results = $this->qdrant->search( $t_query_vector, $t_fetch_limit, $t_min_score, $t_project_id, $t_project_name_filter );
+		if( $t_project_id !== null && $t_project_id === 0 ) {
+			$t_results = $this->qdrant->search_all_projects( $t_query_vector, $t_fetch_limit, $t_min_score );
+		} else {
+			$t_results = $this->qdrant->search( $t_query_vector, $t_fetch_limit, $t_min_score, $t_project_id, $t_project_name_filter );
+		}
+
+		usort( $t_results, function( $p_left, $p_right ) {
+			$t_left_score = isset( $p_left['score'] ) ? (float)$p_left['score'] : 0.0;
+			$t_right_score = isset( $p_right['score'] ) ? (float)$p_right['score'] : 0.0;
+			if( $t_left_score === $t_right_score ) {
+				return 0;
+			}
+			return $t_left_score < $t_right_score ? 1 : -1;
+		} );
 
 		$t_response = array();
+		$t_seen_issue_ids = array();
 		foreach( $t_results as $t_row ) {
 			$t_payload = isset( $t_row['payload'] ) && is_array( $t_row['payload'] ) ? $t_row['payload'] : array();
 			$t_issue_id_row = isset( $t_payload['issue_id'] ) ? (int)$t_payload['issue_id'] : (int)$t_row['id'];
 			if( $t_issue_id > 0 && $t_issue_id_row !== $t_issue_id ) {
+				continue;
+			}
+			if( isset( $t_seen_issue_ids[$t_issue_id_row] ) ) {
 				continue;
 			}
 			$t_project_name_row = isset( $t_payload['project_name'] ) ? (string)$t_payload['project_name'] : '';
@@ -62,6 +79,7 @@ class SemanticSearchService {
 				'score' => isset( $t_row['score'] ) ? (float)$t_row['score'] : 0,
 				'url' => string_get_bug_view_url( $t_issue_id_row ),
 			);
+			$t_seen_issue_ids[$t_issue_id_row] = true;
 			if( count( $t_response ) >= $t_limit ) {
 				break;
 			}
