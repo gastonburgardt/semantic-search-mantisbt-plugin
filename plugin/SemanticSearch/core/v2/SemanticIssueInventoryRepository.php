@@ -11,13 +11,45 @@ class SemanticIssueInventoryRepository {
 
 	public function load_attachments( $p_issue_id ) {
 		$t_raw = file_get_visible_attachments( (int)$p_issue_id );
+		$t_db_files = $this->load_attachment_rows_by_issue( (int)$p_issue_id );
 		$t_out = array();
 		foreach( $t_raw as $t_file ) {
+			$t_file_id = isset( $t_file['id'] ) ? (int)$t_file['id'] : 0;
+			if( $t_file_id > 0 && isset( $t_db_files[$t_file_id] ) ) {
+				$t_file = $t_db_files[$t_file_id] + $t_file;
+			}
 			$t_file['sem_file_exists'] = $this->attachment_physical_exists( $t_file );
 			$t_file['sem_text_content'] = $this->attachment_text_content( $t_file );
 			$t_out[] = $t_file;
 		}
 		return $t_out;
+	}
+
+	private function load_attachment_rows_by_issue( $p_issue_id ) {
+		$t_file_table = db_get_table( 'bug_file' );
+		$t_res = db_query(
+			"SELECT id, filename, folder, diskfile, filesize, file_type, content, date_added, bugnote_id FROM $t_file_table WHERE bug_id=" . db_param(),
+			array( (int)$p_issue_id )
+		);
+		$t_rows = array();
+		while( $t_row = db_fetch_array( $t_res ) ) {
+			$t_file_id = isset( $t_row['id'] ) ? (int)$t_row['id'] : 0;
+			if( $t_file_id <= 0 ) {
+				continue;
+			}
+			$t_rows[$t_file_id] = array(
+				'id' => $t_file_id,
+				'filename' => isset( $t_row['filename'] ) ? $t_row['filename'] : '',
+				'folder' => isset( $t_row['folder'] ) ? $t_row['folder'] : '',
+				'diskfile' => isset( $t_row['diskfile'] ) ? $t_row['diskfile'] : '',
+				'filesize' => isset( $t_row['filesize'] ) ? $t_row['filesize'] : 0,
+				'file_type' => isset( $t_row['file_type'] ) ? $t_row['file_type'] : '',
+				'content' => isset( $t_row['content'] ) ? $t_row['content'] : null,
+				'date_added' => isset( $t_row['date_added'] ) ? $t_row['date_added'] : 0,
+				'bugnote_id' => isset( $t_row['bugnote_id'] ) ? $t_row['bugnote_id'] : 0,
+			);
+		}
+		return $t_rows;
 	}
 
 	private function attachment_physical_exists( array $p_file ) {
