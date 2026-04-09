@@ -22,7 +22,7 @@ class SemanticSearchJobControl {
 		$t_project_id = (int)$p_project_id;
 		$this->unlock_stale_locks();
 		$t_res = db_query(
-			"SELECT Id FROM $t_table WHERE ScopeType='all' OR (ScopeType='project' AND " . db_param() . " > 0 AND ScopeProjectId=" . db_param() . ') LIMIT 1',
+			"SELECT Id FROM $t_table WHERE Kind='vectorize' AND (ScopeType='all' OR (ScopeType='project' AND " . db_param() . " > 0 AND ScopeProjectId=" . db_param() . ')) LIMIT 1',
 			array( $t_project_id, $t_project_id )
 		);
 		return db_num_rows( $t_res ) > 0;

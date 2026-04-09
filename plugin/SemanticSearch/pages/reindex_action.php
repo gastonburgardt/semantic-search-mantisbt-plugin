@@ -51,7 +51,15 @@ function semsearch_get_filters() {
 }
 
 function semsearch_spawn_background_worker( $p_run_id, $p_kind, $p_batch_size ) {
-	$t_php = defined( 'PHP_BINARY' ) && PHP_BINARY ? PHP_BINARY : 'php';
+	$t_php = 'php';
+	if( defined( 'PHP_BINDIR' ) ) {
+		$t_php_candidate = rtrim( (string)PHP_BINDIR, '/\\' ) . DIRECTORY_SEPARATOR . 'php';
+		if( is_file( $t_php_candidate ) && is_executable( $t_php_candidate ) ) {
+			$t_php = $t_php_candidate;
+		}
+	} elseif( defined( 'PHP_BINARY' ) && PHP_BINARY ) {
+		$t_php = (string)PHP_BINARY;
+	}
 	$t_worker = __DIR__ . '/reindex_worker.php';
 	$t_log = sys_get_temp_dir() . '/semsearch_' . preg_replace( '/[^a-zA-Z0-9_-]/', '', $p_run_id ) . '.log';
 	$t_cmd = sprintf(
@@ -70,6 +78,9 @@ function semsearch_spawn_background_worker( $p_run_id, $p_kind, $p_batch_size ) 
 		throw new RuntimeException( 'No se pudo iniciar worker background.' );
 	}
 	$t_pid = isset( $t_out[0] ) ? (int)trim( $t_out[0] ) : 0;
+	if( $t_pid <= 0 ) {
+		throw new RuntimeException( 'Worker background sin PID vÃ¡lido.' );
+	}
 	return array( 'pid' => $t_pid, 'log' => $t_log );
 }
 
@@ -131,7 +142,12 @@ if( $t_ajax ) {
 				return;
 			}
 			$t_jobs->create_run( $t_kind, $scope_type, $scope_project_id, $t_run_id, $t_filters, $t_total );
-			$t_spawn = semsearch_spawn_background_worker( $t_run_id, $t_kind, $t_batch_size );
+			try {
+				$t_spawn = semsearch_spawn_background_worker( $t_run_id, $t_kind, $t_batch_size );
+			} catch( Throwable $e ) {
+				$t_jobs->finish( $t_run_id, 'failed', 'No se pudo iniciar worker background: ' . $e->getMessage() );
+				throw $e;
+			}
 			echo json_encode( array( 'ok' => true, 'run_id' => $t_run_id, 'total' => $t_total, 'pid' => $t_spawn['pid'] ) );
 			return;
 		}
