@@ -686,6 +686,36 @@ class SemanticV2Engine {
 				}
 			}
 		}
+
+		$t_include_attachments = $this->plugin->get_bool_setting( 'include_attachments', false, 'SEMSEARCH_INCLUDE_ATTACHMENTS' );
+		if( $t_include_attachments && isset( $p_dashboard['attachments'] ) ) {
+			$t_allowed_extensions_raw = strtolower( trim( (string)$this->plugin->get_setting( 'attachment_extensions', 'txt,pdf,docx', 'SEMSEARCH_ATTACHMENT_EXTENSIONS' ) ) );
+			$t_allowed_extensions = array_filter( array_map( 'trim', explode( ',', $t_allowed_extensions_raw ) ) );
+			$t_attachment_by_id = array();
+			foreach( $this->inventory_repo->load_attachments( (int)$p_bug->id ) as $t_attachment ) {
+				$t_attachment_by_id[(int)$t_attachment['id']] = $t_attachment;
+			}
+			foreach( $p_dashboard['attachments'] as $t_attachment_row ) {
+				$t_file_id = isset( $t_attachment_row['id'] ) ? (int)$t_attachment_row['id'] : 0;
+				if( $t_file_id <= 0 || empty( $t_attachment_row['effective_indexable'] ) || !empty( $t_attachment_row['deleted'] ) ) {
+					continue;
+				}
+				if( !isset( $t_attachment_by_id[$t_file_id] ) ) {
+					continue;
+				}
+				$t_attachment = $t_attachment_by_id[$t_file_id];
+				$t_filename = isset( $t_attachment['filename'] ) ? (string)$t_attachment['filename'] : '';
+				$t_extension = strtolower( (string)pathinfo( $t_filename, PATHINFO_EXTENSION ) );
+				if( !empty( $t_allowed_extensions ) && $t_extension !== '' && !in_array( $t_extension, $t_allowed_extensions, true ) ) {
+					continue;
+				}
+				$t_text = isset( $t_attachment['sem_text_content'] ) ? trim( (string)$t_attachment['sem_text_content'] ) : '';
+				if( $t_text === '' ) {
+					continue;
+				}
+				$t_parts[] = 'Attachment ' . ( $t_filename !== '' ? $t_filename : ( 'File #' . $t_file_id ) ) . ': ' . $t_text;
+			}
+		}
 		return implode( "\n", array_filter( $t_parts ) );
 	}
 

@@ -14,12 +14,16 @@ class SemanticIssueInventoryRepository {
 		$t_out = array();
 		foreach( $t_raw as $t_file ) {
 			$t_file['sem_file_exists'] = $this->attachment_physical_exists( $t_file );
+			$t_file['sem_text_content'] = $this->attachment_text_content( $t_file );
 			$t_out[] = $t_file;
 		}
 		return $t_out;
 	}
 
 	private function attachment_physical_exists( array $p_file ) {
+		if( $this->attachment_has_inline_content( $p_file ) ) {
+			return true;
+		}
 		$t_diskfile = isset( $p_file['diskfile'] ) ? trim( (string)$p_file['diskfile'] ) : '';
 		if( $t_diskfile === '' ) {
 			return true;
@@ -32,6 +36,34 @@ class SemanticIssueInventoryRepository {
 			return @file_exists( $t_folder . '/' . $t_diskfile );
 		}
 		return false;
+	}
+
+	private function attachment_has_inline_content( array $p_file ) {
+		if( !array_key_exists( 'content', $p_file ) ) {
+			return false;
+		}
+		$t_content = $p_file['content'];
+		if( $t_content === null ) {
+			return false;
+		}
+		return strlen( (string)$t_content ) > 0;
+	}
+
+	private function attachment_text_content( array $p_file ) {
+		if( !$this->attachment_has_inline_content( $p_file ) ) {
+			return '';
+		}
+		$t_file_type = isset( $p_file['file_type'] ) ? strtolower( trim( (string)$p_file['file_type'] ) ) : '';
+		$t_filename = isset( $p_file['filename'] ) ? strtolower( trim( (string)$p_file['filename'] ) ) : '';
+		$t_extension = pathinfo( $t_filename, PATHINFO_EXTENSION );
+		$t_is_text = strpos( $t_file_type, 'text/' ) === 0 || in_array( $t_extension, array( 'txt', 'md', 'log', 'csv' ), true );
+		if( !$t_is_text ) {
+			return '';
+		}
+
+		$t_content = (string)$p_file['content'];
+		$t_content = preg_replace( "/\r\n?/", "\n", $t_content );
+		return trim( $t_content );
 	}
 
 	public function issue_source_hash( $p_bug ) {
@@ -83,11 +115,14 @@ class SemanticIssueInventoryRepository {
 
 	public function file_physical_exists( $p_issue_id, $p_file_id ) {
 		$t_file_table = db_get_table( 'bug_file' );
-		$t_res = db_query( "SELECT diskfile, folder FROM $t_file_table WHERE id=" . db_param() . ' AND bug_id=' . db_param(), array( (int)$p_file_id, (int)$p_issue_id ) );
+		$t_res = db_query( "SELECT diskfile, folder, content FROM $t_file_table WHERE id=" . db_param() . ' AND bug_id=' . db_param(), array( (int)$p_file_id, (int)$p_issue_id ) );
 		if( db_num_rows( $t_res ) <= 0 ) {
 			return false;
 		}
 		$t_row = db_fetch_array( $t_res );
+		if( $this->attachment_has_inline_content( $t_row ) ) {
+			return true;
+		}
 		$t_diskfile = isset( $t_row['diskfile'] ) ? trim( (string)$t_row['diskfile'] ) : '';
 		if( $t_diskfile === '' ) {
 			return true;
