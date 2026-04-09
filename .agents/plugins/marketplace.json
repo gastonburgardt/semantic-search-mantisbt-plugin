@@ -1,0 +1,20 @@
+{
+  "name": "semantic-search-local",
+  "interface": {
+    "displayName": "Semantic Search Local Plugins"
+  },
+  "plugins": [
+    {
+      "name": "semantic-search-codex",
+      "source": {
+        "source": "local",
+        "path": "./plugins/semantic-search-codex"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Developer Tools"
+    }
+  ]
+}

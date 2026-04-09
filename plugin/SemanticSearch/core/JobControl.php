@@ -17,6 +17,16 @@ class SemanticSearchJobControl {
 		return array( $t_scope_type, $t_scope_project_id );
 	}
 
+	public function is_locked_for_project( $p_project_id ) {
+		$t_table = $this->table( 'plugin_semsearch_job_lock' );
+		$t_project_id = (int)$p_project_id;
+		$t_res = db_query(
+			"SELECT Id FROM $t_table WHERE ScopeType='all' OR (ScopeType='project' AND " . db_param() . " > 0 AND ScopeProjectId=" . db_param() . ') LIMIT 1',
+			array( $t_project_id, $t_project_id )
+		);
+		return db_num_rows( $t_res ) > 0;
+	}
+
 	public function create_run( $p_kind, $p_scope_type, $p_scope_project_id, $p_run_id, array $p_filters, $p_total = 0 ) {
 		$t_table = $this->table( 'plugin_semsearch_job_run' );
 		$t_now = $this->now();

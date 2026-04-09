@@ -1,0 +1,13 @@
+project_doc_max_bytes = 65536
+
+# Project-scoped MCP examples for Codex.
+# Uncomment and adjust the servers you want to enable for this repository.
+#
+# [mcp_servers.openaiDeveloperDocs]
+# url = "https://developers.openai.com/mcp"
+# enabled = true
+#
+# [mcp_servers.context7]
+# command = "npx"
+# args = ["-y", "@upstash/context7-mcp"]
+# enabled = false

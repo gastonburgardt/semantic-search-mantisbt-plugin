@@ -1,0 +1,42 @@
+{
+  "name": "semantic-search-codex",
+  "version": "0.1.0",
+  "description": "Repo-local Codex plugin with project context and skills for the SemanticSearch MantisBT plugin.",
+  "author": {
+    "name": "Local Repository",
+    "email": "n/a",
+    "url": "https://github.com/gastonburgardt/semantic-search-mantisbt-plugin"
+  },
+  "homepage": "https://github.com/gastonburgardt/semantic-search-mantisbt-plugin",
+  "repository": "https://github.com/gastonburgardt/semantic-search-mantisbt-plugin",
+  "license": "UNLICENSED",
+  "keywords": [
+    "codex",
+    "mantisbt",
+    "semantic-search",
+    "qdrant",
+    "openai"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Semantic Search Codex",
+    "shortDescription": "Repo-local Codex helpers for this MantisBT plugin.",
+    "longDescription": "Provides project context and reusable Codex skills for working on the SemanticSearch MantisBT plugin, its deployment helpers, and its vectorization workflow.",
+    "developerName": "Local Repository",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "websiteURL": "https://github.com/gastonburgardt/semantic-search-mantisbt-plugin",
+    "privacyPolicyURL": "https://openai.com/policies/row-privacy-policy/",
+    "termsOfServiceURL": "https://openai.com/policies/row-terms-of-use/",
+    "defaultPrompt": [
+      "Review the SemanticSearch plugin architecture.",
+      "Trace the indexing flow across the plugin.",
+      "Compare repo code with a deployed plugin copy."
+    ],
+    "brandColor": "#1F6F8B"
+  }
+}

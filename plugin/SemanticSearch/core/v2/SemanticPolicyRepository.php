@@ -107,17 +107,21 @@ class SemanticPolicyRepository {
 
 	public function save_issue_state( $p_issue_id, array $p_values ) {
 		$t_now = time();
+		$t_deleted = !empty( $p_values['Deleted'] );
+		$t_deleted_at = $t_deleted ? ( array_key_exists( 'DeletedAt', $p_values ) ? $p_values['DeletedAt'] : $t_now ) : null;
 		db_query(
-			"UPDATE " . $this->t_issue() . " SET Hash=" . db_param() . ', Empty=' . db_param() . ', Indexed=' . db_param() . ', Action=' . db_param() . ', NivelDeRevision=' . db_param() . ', UpdatedAt=' . db_param() . ', IndexedAt=' . db_param() . " WHERE IssueId=" . db_param(),
-			array( (string)$p_values['Hash'], $this->bool_to_db( !empty( $p_values['Empty'] ) ), $this->bool_to_db( !empty( $p_values['Indexed'] ) ), (string)$p_values['Action'], (string)$p_values['NivelDeRevision'], $t_now, $this->indexed_at_param( $p_values, $t_now ), (int)$p_issue_id )
+			"UPDATE " . $this->t_issue() . " SET Hash=" . db_param() . ', Empty=' . db_param() . ', Indexed=' . db_param() . ', Action=' . db_param() . ', NivelDeRevision=' . db_param() . ', Deleted=' . db_param() . ', DeletedAt=' . db_param() . ', UpdatedAt=' . db_param() . ', IndexedAt=' . db_param() . " WHERE IssueId=" . db_param(),
+			array( (string)$p_values['Hash'], $this->bool_to_db( !empty( $p_values['Empty'] ) ), $this->bool_to_db( !empty( $p_values['Indexed'] ) ), (string)$p_values['Action'], (string)$p_values['NivelDeRevision'], $this->bool_to_db( $t_deleted ), $t_deleted_at, $t_now, $this->indexed_at_param( $p_values, $t_now ), (int)$p_issue_id )
 		);
 	}
 
 	public function save_note_state( $p_issue_id, $p_note_id, array $p_values ) {
 		$t_now = time();
+		$t_deleted = !empty( $p_values['Deleted'] );
+		$t_deleted_at = $t_deleted ? ( array_key_exists( 'DeletedAt', $p_values ) ? $p_values['DeletedAt'] : $t_now ) : null;
 		db_query(
-			"UPDATE " . $this->t_note() . " SET Hash=" . db_param() . ', Empty=' . db_param() . ', Indexed=' . db_param() . ', Action=' . db_param() . ', NivelDeRevision=' . db_param() . ', UpdatedAt=' . db_param() . ', IndexedAt=' . db_param() . " WHERE IssueId=" . db_param() . ' AND NoteId=' . db_param(),
-			array( (string)$p_values['Hash'], $this->bool_to_db( !empty( $p_values['Empty'] ) ), $this->bool_to_db( !empty( $p_values['Indexed'] ) ), (string)$p_values['Action'], (string)$p_values['NivelDeRevision'], $t_now, $this->indexed_at_param( $p_values, $t_now ), (int)$p_issue_id, (int)$p_note_id )
+			"UPDATE " . $this->t_note() . " SET Hash=" . db_param() . ', Empty=' . db_param() . ', Indexed=' . db_param() . ', Action=' . db_param() . ', NivelDeRevision=' . db_param() . ', Deleted=' . db_param() . ', DeletedAt=' . db_param() . ', UpdatedAt=' . db_param() . ', IndexedAt=' . db_param() . " WHERE IssueId=" . db_param() . ' AND NoteId=' . db_param(),
+			array( (string)$p_values['Hash'], $this->bool_to_db( !empty( $p_values['Empty'] ) ), $this->bool_to_db( !empty( $p_values['Indexed'] ) ), (string)$p_values['Action'], (string)$p_values['NivelDeRevision'], $this->bool_to_db( $t_deleted ), $t_deleted_at, $t_now, $this->indexed_at_param( $p_values, $t_now ), (int)$p_issue_id, (int)$p_note_id )
 		);
 	}
 

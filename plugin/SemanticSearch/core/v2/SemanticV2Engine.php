@@ -68,12 +68,13 @@ class SemanticV2Engine {
 					$t_file_src = $this->find_file( $t_files, $t_fid );
 					$t_source_hash = $this->inventory_repo->file_source_hash( $t_file_src );
 					$t_source_updated_at = $this->inventory_repo->file_source_updated_at( $t_file_src );
+					$t_file_empty = (int)( isset( $t_file_src['size'] ) ? $t_file_src['size'] : 0 ) <= 0;
 					if( !$t_note_indexable ) {
 						$t_indexed = (int)$this->rowv( $t_row, 'Indexed', 0 ) === 1;
 						$t_action = $t_indexed ? SemanticPolicyAction::DELETE_INDEX : SemanticPolicyAction::NOTHING;
 						$t_eval = array( 'Action' => $t_action, 'StoreHash' => $t_source_hash );
 					} else {
-						$t_eval = $this->evaluate_action( (int)$this->rowv( $t_row, 'Indexable', 0 ) === 1, false, (int)$this->rowv( $t_row, 'Indexed', 0 ) === 1, $t_source_hash, (string)$this->rowv( $t_row, 'Hash', '' ), $t_source_updated_at, $this->rowv( $t_row, 'IndexedAt', null ) );
+						$t_eval = $this->evaluate_action( (int)$this->rowv( $t_row, 'Indexable', 0 ) === 1, $t_file_empty, (int)$this->rowv( $t_row, 'Indexed', 0 ) === 1, $t_source_hash, (string)$this->rowv( $t_row, 'Hash', '' ), $t_source_updated_at, $this->rowv( $t_row, 'IndexedAt', null ) );
 					}
 					$t_level = $t_eval['Action'] === SemanticPolicyAction::NOTHING ? SemanticReviewLevel::NONE : SemanticReviewLevel::ONLY_ME;
 					if( $t_eval['Action'] !== SemanticPolicyAction::NOTHING ) { $t_has_children = true; }
@@ -616,6 +617,11 @@ class SemanticV2Engine {
 		$t_vector = $this->openai->embed( $t_text );
 		$this->qdrant->ensure_collection( count( $t_vector ), (int)$t_bug->project_id, project_get_name( (int)$t_bug->project_id ) );
 		$this->qdrant->upsert_issue( $t_issue_id, $t_vector, $this->build_payload( $t_bug, array() ) );
+		$t_now = time();
+		$t_tree = $this->policy_repo->by_issue( $t_issue_id );
+		$this->apply_index_result_issue( $t_issue_id, $t_tree['issue'], $t_now );
+		foreach( $t_tree['notes'] as $t_note ) { $this->apply_index_result_note( $t_issue_id, $t_note, $t_now ); }
+		foreach( $t_tree['files'] as $t_file ) { $this->apply_index_result_file( $t_issue_id, $t_file, $t_now ); }
 	}
 
 	private function list_reindex_candidate_ids( array $p_filters ) {
@@ -662,13 +668,16 @@ class SemanticV2Engine {
 			$t_parts[] = 'Description: ' . trim( (string)$p_bug->description );
 		}
 
+		$t_include_notes = $this->plugin->get_bool_setting( 'include_notes', true, 'SEMSEARCH_INCLUDE_NOTES' );
 		$t_note_text_by_id = array();
-		$t_issue_notes = $this->inventory_repo->load_notes( (int)$p_bug->id );
-		foreach( $t_issue_notes as $t_note ) {
-			$t_note_text_by_id[(int)$t_note->id] = trim( (string)$t_note->note );
+		if( $t_include_notes ) {
+			$t_issue_notes = $this->inventory_repo->load_notes( (int)$p_bug->id );
+			foreach( $t_issue_notes as $t_note ) {
+				$t_note_text_by_id[(int)$t_note->id] = trim( (string)$t_note->note );
+			}
 		}
 
-		if( isset( $p_dashboard['notes'] ) ) {
+		if( $t_include_notes && isset( $p_dashboard['notes'] ) ) {
 			foreach( $p_dashboard['notes'] as $n ) {
 				$t_note_id = isset( $n['id'] ) ? (int)$n['id'] : 0;
 				$t_note_text = isset( $t_note_text_by_id[$t_note_id] ) ? $t_note_text_by_id[$t_note_id] : '';
